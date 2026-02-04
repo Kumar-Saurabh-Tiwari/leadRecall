@@ -15,6 +15,13 @@ export default function Home() {
 
   useEffect(() => {
     setEntries(entryService.getAll());
+    
+    // Re-fetch entries when returning to this page (simple polling for demo)
+    const interval = setInterval(() => {
+      setEntries(entryService.getAll());
+    }, 1000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const filteredEntries = entries.filter(entry => 
@@ -22,10 +29,6 @@ export default function Home() {
     entry.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
     entry.event.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const handleEntryAdded = (entry: Entry) => {
-    setEntries(entryService.getAll());
-  };
 
   return (
     <div className="min-h-screen">
@@ -88,7 +91,7 @@ export default function Home() {
       </div>
 
       {/* FAB */}
-      <AddEntryFAB onEntryAdded={handleEntryAdded} />
+      <AddEntryFAB />
     </div>
   );
 }
