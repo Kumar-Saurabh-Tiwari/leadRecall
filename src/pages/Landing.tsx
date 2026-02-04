@@ -121,12 +121,22 @@ export default function Landing() {
               className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight tracking-tight"
             >
               Smart networking for{' '}
-              <span className="relative">
-                <span className="bg-clip-text text-transparent gradient-primary">
+              <span className="relative inline-block">
+                <span 
+                  className="bg-clip-text text-transparent"
+                  style={{ 
+                    backgroundImage: 'linear-gradient(135deg, hsl(243, 75%, 59%) 0%, hsl(280, 70%, 55%) 50%, hsl(292, 70%, 50%) 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
                   modern events
                 </span>
                 <motion.span
-                  className="absolute -bottom-2 left-0 right-0 h-1 gradient-primary rounded-full"
+                  className="absolute -bottom-2 left-0 right-0 h-1 rounded-full"
+                  style={{ 
+                    backgroundImage: 'linear-gradient(135deg, hsl(243, 75%, 59%) 0%, hsl(280, 70%, 55%) 50%, hsl(292, 70%, 50%) 100%)' 
+                  }}
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
                   transition={{ delay: 0.8, duration: 0.6, ease: 'easeOut' }}
