@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, QrCode, UserPlus, ScanText } from 'lucide-react';
+import { Plus, X, QrCode, UserPlus, ScanText, Calendar } from 'lucide-react';
 
 interface AddOption {
   id: string;
@@ -32,6 +32,13 @@ const addOptions: AddOption[] = [
     description: 'Scan business card',
     icon: ScanText,
     path: '/dashboard/add/scan-ocr',
+  },
+  {
+    id: 'add-event',
+    label: 'Add Event',
+    description: 'Create a new event',
+    icon: Calendar,
+    path: '/dashboard/add/event',
   },
 ];
 

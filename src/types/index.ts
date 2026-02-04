@@ -17,15 +17,21 @@ export interface Entry {
   notes: string;
   type: UserRole;
   createdAt: Date;
+  linkedin?: string;
+  profileUrl?: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface Event {
   id: string;
   name: string;
   date: Date;
+  endDate?: Date;
   location: string;
   role: UserRole;
   description?: string;
+  image?: string;
 }
 
 export interface CalendarItem {

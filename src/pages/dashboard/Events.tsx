@@ -1,18 +1,64 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Calendar, Users, Briefcase } from 'lucide-react';
+import { MapPin, Calendar, Clock, Zap, CheckCircle2, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { eventService } from '@/services/eventService';
 import { Event } from '@/types';
 import { format } from 'date-fns';
 
+type TimelineFilter = 'all' | 'upcoming' | 'live' | 'past';
+
 export default function Events() {
+  const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
+  const [timelineFilter, setTimelineFilter] = useState<TimelineFilter>('all');
 
   useEffect(() => {
     setEvents(eventService.getAll());
   }, []);
+
+  const getEventTimeline = (eventDate: Date): 'upcoming' | 'live' | 'past' => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eventDateOnly = new Date(eventDate);
+    eventDateOnly.setHours(0, 0, 0, 0);
+
+    if (eventDateOnly.getTime() > today.getTime()) return 'upcoming';
+    if (eventDateOnly.getTime() === today.getTime()) return 'live';
+    return 'past';
+  };
+
+  const getTimelineIcon = (timeline: 'upcoming' | 'live' | 'past') => {
+    switch (timeline) {
+      case 'upcoming':
+        return <Clock className="h-3 w-3 mr-1" />;
+      case 'live':
+        return <Zap className="h-3 w-3 mr-1" />;
+      case 'past':
+        return <CheckCircle2 className="h-3 w-3 mr-1" />;
+    }
+  };
+
+  const getTimelineGradient = (timeline: 'upcoming' | 'live' | 'past') => {
+    switch (timeline) {
+      case 'upcoming':
+        return 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0';
+      case 'live':
+        return 'bg-gradient-to-r from-red-500 to-orange-500 text-white border-0';
+      case 'past':
+        return 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0';
+    }
+  };
+
+  const filteredEvents = events.filter(event => {
+    const timelineMatch = timelineFilter === 'all' ||
+      getEventTimeline(event.date) === timelineFilter;
+
+    return timelineMatch;
+  });
 
   return (
     <div className="min-h-screen">
@@ -22,67 +68,113 @@ export default function Events() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
+          className="flex items-center justify-between gap-3"
         >
-          <h1 className="text-xl font-bold text-foreground mb-1">Events</h1>
-          <p className="text-sm text-muted-foreground">
-            Upcoming conferences and meetups
-          </p>
+          <div>
+            <h1 className="text-xl font-bold text-foreground mb-1">Events</h1>
+            <p className="text-sm text-muted-foreground">
+              Upcoming conferences and meetups
+            </p>
+          </div>
+          <Button 
+            onClick={() => navigate('/dashboard/add/event')}
+            size="sm"
+            className="gradient-primary"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add Event
+          </Button>
         </motion.div>
       </header>
 
+      {/* Filters */}
+      <div className="sticky top-[70px] z-30 glass border-b border-border/50 px-4 py-3 space-y-3">
+        {/* Timeline Filter */}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Timeline</p>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {(['all', 'upcoming', 'live', 'past'] as const).map((timeline) => (
+              <Button
+                key={timeline}
+                variant={timelineFilter === timeline ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimelineFilter(timeline)}
+                className={timelineFilter === timeline && timeline !== 'all' ? getTimelineGradient(timeline) : ''}
+              >
+                {timeline === 'all' ? 'All Events' : 
+                  <>
+                    {timeline === 'upcoming' && <Clock className="h-3 w-3 mr-1" />}
+                    {timeline === 'live' && <Zap className="h-3 w-3 mr-1" />}
+                    {timeline === 'past' && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                    {timeline.charAt(0).toUpperCase() + timeline.slice(1)}
+                  </>
+                }
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Event List */}
       <div className="p-4 space-y-4">
-        {events.map((event, index) => (
+        {filteredEvents.length > 0 ? (
+          filteredEvents.map((event, index) => (
+            <motion.div
+              key={event.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+            >
+              <Card 
+                className="shadow-card hover:shadow-elevated transition-all border-border/50 overflow-hidden cursor-pointer"
+                onClick={() => navigate(`/dashboard/event/${event.id}`)}
+              >
+                {/* Accent bar */}
+                <div className={`h-1 ${event.role === 'exhibitor' ? 'gradient-primary' : 'bg-secondary'}`} />
+                
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <h3 className="font-semibold text-foreground text-lg">
+                      {event.name}
+                    </h3>
+                    <Badge className={getTimelineGradient(getEventTimeline(event.date))}>
+                      {getTimelineIcon(getEventTimeline(event.date))}
+                      {getEventTimeline(event.date).charAt(0).toUpperCase() + getEventTimeline(event.date).slice(1)}
+                    </Badge>
+                  </div>
+
+                  {event.description && (
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {event.description}
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      {format(event.date, 'MMMM d, yyyy')}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      {event.location}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))
+        ) : (
           <motion.div
-            key={event.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.05 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col items-center justify-center py-12 text-center"
           >
-            <Card className="shadow-card hover:shadow-elevated transition-all border-border/50 overflow-hidden">
-              {/* Accent bar */}
-              <div className={`h-1 ${event.role === 'exhibitor' ? 'gradient-primary' : 'bg-secondary'}`} />
-              
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <h3 className="font-semibold text-foreground text-lg">
-                    {event.name}
-                  </h3>
-                  <Badge 
-                    variant={event.role === 'exhibitor' ? 'default' : 'secondary'}
-                    className={event.role === 'exhibitor' 
-                      ? 'gradient-primary text-primary-foreground border-0' 
-                      : 'bg-secondary text-secondary-foreground'
-                    }
-                  >
-                    {event.role === 'exhibitor' ? (
-                      <><Briefcase className="h-3 w-3 mr-1" /> Exhibiting</>
-                    ) : (
-                      <><Users className="h-3 w-3 mr-1" /> Attending</>
-                    )}
-                  </Badge>
-                </div>
-
-                {event.description && (
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {event.description}
-                  </p>
-                )}
-
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1.5">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    {format(event.date, 'MMMM d, yyyy')}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    {event.location}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+            <Calendar className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <p className="text-muted-foreground">No events found</p>
+            <p className="text-sm text-muted-foreground/70">Try adjusting your filters</p>
           </motion.div>
-        ))}
+        )}
       </div>
     </div>
   );

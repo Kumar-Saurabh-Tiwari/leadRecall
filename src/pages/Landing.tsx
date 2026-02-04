@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Briefcase, Users, Sparkles, Zap, ArrowRight } from 'lucide-react';
 import { Logo } from '@/components/shared/Logo';
-import { RoleCard } from '@/components/shared/RoleCard';
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -43,6 +42,83 @@ export default function Landing() {
         stiffness: 100,
         damping: 15,
       },
+    },
+  };
+
+  const sectionVariants = {
+    hidden: { opacity: 0, y: 60 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        ease: [0.23, 1, 0.320, 1] as const,
+      },
+    },
+  };
+
+  const featureVariants = {
+    hidden: { opacity: 0, x: -30 },
+    visible: (i: number) => ({
+      opacity: 1,
+      x: 0,
+      transition: {
+        delay: i * 0.12,
+        duration: 0.6,
+        ease: [0.34, 1.56, 0.64, 1] as const,
+      },
+    }),
+    hover: {
+      x: 8,
+      transition: { duration: 0.3 },
+    },
+  };
+
+  const imageVariants = {
+    hidden: { opacity: 0, scale: 0.85, rotateY: -15 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      rotateY: 0,
+      transition: {
+        duration: 0.9,
+        ease: [0.23, 1, 0.320, 1] as const,
+      },
+    },
+    hover: {
+      y: -10,
+      transition: { duration: 0.4, ease: 'easeInOut' as const },
+    },
+  };
+
+  const badgeVariants = {
+    hidden: { opacity: 0, scale: 0.8 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: { duration: 0.5 },
+    },
+    hover: {
+      scale: 1.05,
+      transition: { duration: 0.2 },
+    },
+  };
+
+  const headingVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.7, ease: [0.23, 1, 0.320, 1] as const },
+    },
+  };
+
+  const textVariants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: 'easeOut' as const },
     },
   };
 
@@ -175,29 +251,246 @@ export default function Landing() {
             </motion.div>
           </div>
 
-          {/* Role Cards */}
+          {/* Professional Sections Layout */}
           <motion.div
             variants={itemVariants}
-            className="grid md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto"
+            className="space-y-24 max-w-5xl mx-auto"
           >
-            <RoleCard
-              role="exhibitor"
-              title="For Exhibitors"
-              subtitle="Showcase & capture leads effortlessly"
-              features={exhibitorFeatures}
-              icon={Briefcase}
-              onSelect={() => navigate('/login?role=exhibitor')}
-              delay={0.4}
+            {/* Exhibitors Section */}
+            <motion.section
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={sectionVariants}
+              className="grid md:grid-cols-2 gap-10 lg:gap-16 items-center py-12"
+            >
+              <div className="space-y-6 order-2 md:order-1">
+                <motion.div 
+                  variants={badgeVariants}
+                  initial="hidden"
+                  whileInView="visible"
+                  whileHover="hover"
+                  viewport={{ once: true }}
+                  className="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-800/50 w-fit cursor-default"
+                >
+                  <Briefcase className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">FOR EXHIBITORS</span>
+                </motion.div>
+                
+                <motion.h2 
+                  variants={headingVariants}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  className="text-3xl md:text-4xl font-bold text-foreground leading-tight"
+                >
+                  Maximize Your Lead Capture at Every Event
+                </motion.h2>
+
+                <motion.p 
+                  variants={textVariants}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  className="text-lg text-muted-foreground leading-relaxed"
+                >
+                  Transform your booth experience with our intelligent lead capture technology. Effortlessly connect with attendees through QR codes, QR scanning, and real-time data insights. Every interaction is recorded, organized, and ready for follow-up.
+                </motion.p>
+
+                <div className="space-y-4 pt-4">
+                  {exhibitorFeatures.map((feature, index) => (
+                    <motion.div
+                      key={index}
+                      custom={index}
+                      initial="hidden"
+                      whileInView="visible"
+                      whileHover="hover"
+                      viewport={{ once: true }}
+                      variants={featureVariants}
+                      className="flex items-start gap-4 cursor-default"
+                    >
+                      <motion.div 
+                        className="flex-shrink-0 mt-1"
+                        whileHover={{ scale: 1.2, rotate: 12 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="flex items-center justify-center h-5 w-5 rounded-full bg-blue-600 dark:bg-blue-400">
+                          <Sparkles className="h-3 w-3 text-white" />
+                        </div>
+                      </motion.div>
+                      <div>
+                        <p className="font-semibold text-foreground">{feature}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <motion.button
+                  onClick={() => navigate('/login?role=exhibitor')}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.2 }}
+                  className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+                >
+                  Get Started as Exhibitor
+                  <motion.div
+                    whileHover={{ x: 3 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </motion.div>
+                </motion.button>
+              </div>
+
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                whileHover="hover"
+                viewport={{ once: true }}
+                variants={imageVariants}
+                style={{ perspective: 1000 }}
+                className="order-1 md:order-2"
+              >
+                <motion.div 
+                  className="relative h-80 md:h-96 rounded-xl overflow-hidden shadow-2xl bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-950/50 dark:to-blue-900/30 border border-blue-200/30 dark:border-blue-800/30"
+                  whileHover={{ boxShadow: "0 25px 50px rgba(59, 130, 246, 0.2)" }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <motion.div 
+                    className="absolute inset-0 flex items-center justify-center"
+                    animate={{ y: [0, 10, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <div className="text-center space-y-4">
+                      <Briefcase className="h-24 w-24 text-blue-300 dark:text-blue-700 mx-auto opacity-50" />
+                      <p className="text-muted-foreground font-medium">Professional Lead Management</p>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+            </motion.section>
+
+            {/* Divider */}
+            <motion.div
+              initial={{ opacity: 0, scaleX: 0 }}
+              whileInView={{ opacity: 1, scaleX: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="h-px bg-gradient-to-r from-transparent via-border to-transparent"
             />
-            <RoleCard
-              role="attendee"
-              title="For Attendees"
-              subtitle="Discover exhibitors & grow your network"
-              features={attendeeFeatures}
-              icon={Users}
-              onSelect={() => navigate('/login?role=attendee')}
-              delay={0.5}
-            />
+
+            {/* Attendees Section */}
+            <motion.section
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={sectionVariants}
+              className="grid md:grid-cols-2 gap-10 lg:gap-16 items-center py-12"
+            >
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                whileHover="hover"
+                viewport={{ once: true }}
+                variants={imageVariants}
+                style={{ perspective: 1000 }}
+              >
+                <motion.div 
+                  className="relative h-80 md:h-96 rounded-xl overflow-hidden shadow-2xl bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-950/50 dark:to-emerald-900/30 border border-emerald-200/30 dark:border-emerald-800/30"
+                  whileHover={{ boxShadow: "0 25px 50px rgba(16, 185, 129, 0.2)" }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <motion.div 
+                    className="absolute inset-0 flex items-center justify-center"
+                    animate={{ y: [0, 10, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <div className="text-center space-y-4">
+                      <Users className="h-24 w-24 text-emerald-300 dark:text-emerald-700 mx-auto opacity-50" />
+                      <p className="text-muted-foreground font-medium">Smart Networking</p>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+
+              <div className="space-y-6">
+                <motion.div 
+                  variants={badgeVariants}
+                  initial="hidden"
+                  whileInView="visible"
+                  whileHover="hover"
+                  viewport={{ once: true }}
+                  className="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/50 w-fit cursor-default"
+                >
+                  <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">FOR ATTENDEES</span>
+                </motion.div>
+                
+                <motion.h2 
+                  variants={headingVariants}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  className="text-3xl md:text-4xl font-bold text-foreground leading-tight"
+                >
+                  Build Meaningful Professional Connections
+                </motion.h2>
+
+                <motion.p 
+                  variants={textVariants}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  className="text-lg text-muted-foreground leading-relaxed"
+                >
+                  Navigate events with confidence and purpose. Discover exhibitors aligned with your interests, connect seamlessly, and build a professional network that lasts. Every connection is saved and organized for easy follow-up and future collaboration.
+                </motion.p>
+
+                <div className="space-y-4 pt-4">
+                  {attendeeFeatures.map((feature, index) => (
+                    <motion.div
+                      key={index}
+                      custom={index}
+                      initial="hidden"
+                      whileInView="visible"
+                      whileHover="hover"
+                      viewport={{ once: true }}
+                      variants={featureVariants}
+                      className="flex items-start gap-4 cursor-default"
+                    >
+                      <motion.div 
+                        className="flex-shrink-0 mt-1"
+                        whileHover={{ scale: 1.2, rotate: 12 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="flex items-center justify-center h-5 w-5 rounded-full bg-emerald-600 dark:bg-emerald-400">
+                          <Sparkles className="h-3 w-3 text-white" />
+                        </div>
+                      </motion.div>
+                      <div>
+                        <p className="font-semibold text-foreground">{feature}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <motion.button
+                  onClick={() => navigate('/login?role=attendee')}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.2 }}
+                  className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+                >
+                  Join as Attendee
+                  <motion.div
+                    whileHover={{ x: 3 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </motion.div>
+                </motion.button>
+              </div>
+            </motion.section>
           </motion.div>
 
           {/* Bottom CTA */}

@@ -9,6 +9,10 @@ const initialEntries: Entry[] = [
     notes: 'Interested in our enterprise plan. Follow up next week.',
     type: 'attendee',
     createdAt: new Date('2025-02-02'),
+    email: 'sarah.johnson@techstart.com',
+    phone: '+1 (555) 123-4567',
+    linkedin: 'https://linkedin.com/in/sarahjohnson',
+    profileUrl: 'https://techstart.com',
   },
   {
     id: '2',
@@ -18,6 +22,10 @@ const initialEntries: Entry[] = [
     notes: 'CTO looking for partnership opportunities.',
     type: 'exhibitor',
     createdAt: new Date('2025-02-01'),
+    email: 'michael.chen@innovationlabs.io',
+    phone: '+1 (555) 234-5678',
+    linkedin: 'https://linkedin.com/in/michaelchen',
+    profileUrl: 'https://innovationlabs.io',
   },
   {
     id: '3',
@@ -27,6 +35,10 @@ const initialEntries: Entry[] = [
     notes: 'Requested demo for Q2. Very promising lead.',
     type: 'attendee',
     createdAt: new Date('2025-01-30'),
+    email: 'emma.williams@cloudscale.com',
+    phone: '+1 (555) 345-6789',
+    linkedin: 'https://linkedin.com/in/emmawilliams',
+    profileUrl: 'https://cloudscale.com',
   },
   {
     id: '4',
@@ -36,6 +48,10 @@ const initialEntries: Entry[] = [
     notes: 'Met at keynote. Wants to explore integration.',
     type: 'exhibitor',
     createdAt: new Date('2025-01-28'),
+    email: 'david.park@nextgenai.com',
+    phone: '+1 (555) 456-7890',
+    linkedin: 'https://linkedin.com/in/davidpark',
+    profileUrl: 'https://nextgenai.com',
   },
 ];
 
@@ -75,5 +91,11 @@ export const entryService = {
 
   getByType(type: UserRole): Entry[] {
     return this.getAll().filter(e => e.type === type);
+  },
+
+  getByRole(userRole: UserRole): Entry[] {
+    // Exhibitors see attendee entries, Attendees see exhibitor entries
+    const oppositeRole: UserRole = userRole === 'exhibitor' ? 'attendee' : 'exhibitor';
+    return this.getAll().filter(e => e.type === oppositeRole);
   },
 };
