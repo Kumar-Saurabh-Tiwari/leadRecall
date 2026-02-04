@@ -12,6 +12,9 @@ import Home from "./pages/dashboard/Home";
 import Events from "./pages/dashboard/Events";
 import CalendarPage from "./pages/dashboard/Calendar";
 import Profile from "./pages/dashboard/Profile";
+import ScanQR from "./pages/dashboard/add/ScanQR";
+import AddContact from "./pages/dashboard/add/AddContact";
+import ScanOCR from "./pages/dashboard/add/ScanOCR";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +38,10 @@ const App = () => (
               <Route path="events" element={<Events />} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="profile" element={<Profile />} />
+              {/* Add Entry Routes */}
+              <Route path="add/scan-qr" element={<ScanQR />} />
+              <Route path="add/manual" element={<AddContact />} />
+              <Route path="add/scan-ocr" element={<ScanOCR />} />
             </Route>
             
             {/* Fallback */}
