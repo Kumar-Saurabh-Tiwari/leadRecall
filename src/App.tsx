@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { EventProvider } from "@/contexts/EventContext";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import RegisterExhibitor from "./pages/RegisterExhibitor";
@@ -28,39 +29,41 @@ const App = () => (
   <div className="min-h-screen">
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Landing />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register-exhibitor" element={<RegisterExhibitor />} />
-              <Route path="/register-attendee" element={<RegisterAttendee />} />
-              <Route path="/register" element={<Navigate to="/register-exhibitor" replace />} />
-              
-              {/* Protected Dashboard Routes */}
-              <Route path="/dashboard" element={<DashboardLayout />}>
-                <Route index element={<Home />} />
-                <Route path="entry/:id" element={<EntryDetail />} />
-                <Route path="edit/:id" element={<EditEntry />} />
-                <Route path="events" element={<Events />} />
-                <Route path="event/:id" element={<EventDetail />} />
-                <Route path="calendar" element={<CalendarPage />} />
-                <Route path="profile" element={<Profile />} />
-                {/* Add Entry Routes */}
-                <Route path="add/scan-qr" element={<ScanQR />} />
-                <Route path="add/manual" element={<AddContact />} />
-                <Route path="add/scan-ocr" element={<ScanOCR />} />
-                <Route path="add/event" element={<AddEvent />} />
-              </Route>
-              
-              {/* Fallback */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <EventProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Landing />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register-exhibitor" element={<RegisterExhibitor />} />
+                <Route path="/register-attendee" element={<RegisterAttendee />} />
+                <Route path="/register" element={<Navigate to="/register-exhibitor" replace />} />
+                
+                {/* Protected Dashboard Routes */}
+                <Route path="/dashboard" element={<DashboardLayout />}>
+                  <Route index element={<Home />} />
+                  <Route path="entry/:id" element={<EntryDetail />} />
+                  <Route path="edit/:id" element={<EditEntry />} />
+                  <Route path="events" element={<Events />} />
+                  <Route path="event/:id" element={<EventDetail />} />
+                  <Route path="calendar" element={<CalendarPage />} />
+                  <Route path="profile" element={<Profile />} />
+                  {/* Add Entry Routes */}
+                  <Route path="add/scan-qr" element={<ScanQR />} />
+                  <Route path="add/manual" element={<AddContact />} />
+                  <Route path="add/scan-ocr" element={<ScanOCR />} />
+                  <Route path="add/event" element={<AddEvent />} />
+                </Route>
+                
+                {/* Fallback */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </EventProvider>
       </AuthProvider>
     </QueryClientProvider>
   </div>

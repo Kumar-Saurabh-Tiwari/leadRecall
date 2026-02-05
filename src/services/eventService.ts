@@ -199,7 +199,7 @@ export const eventService = {
     mockEvents.push(newEvent);
     return newEvent;
   },
-
+ 
   // Backend APIs
 
   addNewLeadEvent: async (data: unknown): Promise<unknown> => {
@@ -215,6 +215,29 @@ export const eventService = {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     return response.json();
+  },
+
+  async getDirectURL(file: File, mediaType: string = 'image'): Promise<string> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('mediaType', mediaType);
+
+      const response = await fetch(`${environment.apiUrl}/common/upload-media`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('File upload failed');
+      }
+
+      const result = await response.json();
+      return result.data.url; // Return the direct URL from API response
+    } catch (error) {
+      console.error('File upload error:', error);
+      throw error;
+    }
   },
 
   getLeadEvents: async (adminEmail: string): Promise<unknown> => {

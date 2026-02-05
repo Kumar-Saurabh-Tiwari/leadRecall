@@ -14,7 +14,8 @@ import {
   Linkedin,
   Globe,
   Copy,
-  ExternalLink
+  ExternalLink,
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +40,7 @@ export default function EntryDetail() {
   const navigate = useNavigate();
   const [entry, setEntry] = useState<Entry | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -147,6 +149,25 @@ export default function EntryDetail() {
                 >
                   {entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee'}
                 </Badge>
+              </div>
+
+              {/* Image Section */}
+              <div className="mb-6">
+                {entry.image && !imageError ? (
+                  <img
+                    src={entry.image}
+                    alt={entry.name}
+                    onError={() => setImageError(true)}
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-muted/50 rounded-lg flex items-center justify-center border border-dashed border-muted-foreground/30">
+                    <div className="flex flex-col items-center gap-2">
+                      <User className="h-10 w-10 text-muted-foreground/50" />
+                      <p className="text-sm text-muted-foreground/70">No image available</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <Separator className="my-4" />

@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { eventService } from '@/services/eventService';
 import { Event } from '@/types';
+import { useEvents } from '@/contexts/EventContext';
 
 interface AddOption {
   id: string;
@@ -56,26 +57,20 @@ const addOptions: AddOption[] = [
 export function AddEntryFAB() {
   const [isOpen, setIsOpen] = useState(false);
   const [showEventDialog, setShowEventDialog] = useState(false);
-  const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { events, isLoading } = useEvents();
 
   const handleOptionClick = (path: string) => {
     setIsOpen(false);
     // For add contact, scan QR, and scan OCR options - show event dialog first
     if (path === '/dashboard/add/manual' || path === '/dashboard/add/scan-qr' || path === '/dashboard/add/scan-ocr') {
       setSelectedOption(path);
-      fetchEvents();
       setShowEventDialog(true);
     } else {
       navigate(path);
     }
-  };
-
-  const fetchEvents = () => {
-    const allEvents = eventService.getAll();
-    setEvents(allEvents);
   };
 
   const handleEventSelect = (event: Event) => {
@@ -116,7 +111,11 @@ export function AddEntryFAB() {
           </DialogHeader>
           <ScrollArea className="h-[400px] pr-4">
             <div className="space-y-2">
-              {events.length === 0 ? (
+              {isLoading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading events...
+                </div>
+              ) : events.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   No events available
                 </div>

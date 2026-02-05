@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 import { CalendarDays, Bell, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,12 +19,15 @@ import { format, isToday, isTomorrow, isThisWeek, addDays, startOfMonth, endOfMo
 export default function CalendarPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const authContext = useAuth();
+  const userEmail = authContext.user?.email || '';
   const [currentDate, setCurrentDate] = useState(new Date());
   const [items, setItems] = useState<CalendarItem[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     startTime: '09:00',
@@ -31,9 +35,47 @@ export default function CalendarPage() {
   });
 
   useEffect(() => {
-    setItems(calendarService.getAll());
-    setEvents(eventService.getAll());
-  }, []);
+    const fetchCalendarData = async () => {
+      try {
+        setIsLoading(true);
+        // Try to fetch from API
+        if (userEmail) {
+          try {
+            const apiResponse = await calendarService.getCalendarData(userEmail, 'all');
+            if (apiResponse && apiResponse.data && apiResponse.data.calendarEvents) {
+              const formattedItems = apiResponse.data.calendarEvents.map((item: any) => ({
+                id: item.eventId || item.noteId || item.id,
+                title: item.title,
+                date: new Date(item.date),
+                type: (item.type === 'note' ? 'follow-up' : 'event') as 'event' | 'follow-up',
+                relatedId: item.eventId || item.noteId,
+              }));
+              setItems(formattedItems);
+              console.log('Calendar events loaded from API:', formattedItems);
+            } else {
+              // Fallback to mock data
+              setItems(calendarService.getAll());
+            }
+          } catch (apiError: unknown) {
+            console.warn('API call failed, using mock data:', apiError);
+            setItems(calendarService.getAll());
+          }
+        } else {
+          setItems(calendarService.getAll());
+        }
+        setEvents(eventService.getAll());
+      } catch (error) {
+        console.error('Error fetching calendar data:', error);
+        // Fallback to mock data
+        setItems(calendarService.getAll());
+        setEvents(eventService.getAll());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCalendarData();
+  }, [userEmail]);
 
   // Get all days in the current month
   const monthStart = startOfMonth(currentDate);
@@ -116,6 +158,15 @@ export default function CalendarPage() {
     }));
   };
 
+  // Convert timestamp to MongoDB ObjectId hexadecimal format
+  const generateMongoObjectId = (timestamp: number): string => {
+    // Convert timestamp to 8-digit hex (4 bytes)
+    const timestampHex = timestamp.toString(16).padStart(8, '0');
+    // Add 16 more hex digits (8 bytes) for uniqueness
+    const uniqueHex = Math.random().toString(16).substring(2).padEnd(16, '0').substring(0, 16);
+    return (timestampHex + uniqueHex).substring(0, 24);
+  };
+
   const handleSubmitTask = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -138,16 +189,40 @@ export default function CalendarPage() {
       const taskDateTime = new Date(selectedDate);
       taskDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
+      // Generate MongoDB ObjectId in hexadecimal format
+      const mongoObjectId = generateMongoObjectId(Date.now());
+
       // Create new task
       const newTask: CalendarItem = {
-        id: Date.now().toString(),
+        id: mongoObjectId,
         title: formData.title,
         date: taskDateTime,
         type: 'follow-up',
         relatedId: undefined,
       };
 
-      // Add to calendar service
+      // Prepare task data for API
+      const taskData = {
+        _id: mongoObjectId,
+        iContactId: mongoObjectId,
+        sType: 'calendar_event',
+        sEmail: userEmail,
+        sNote: formData.notes || formData.title,
+        aAddtionalDetails: formData.title,
+        sActionTime: taskDateTime.toISOString(),
+      };
+
+      // Try to add task via API
+      let apiSuccess = false;
+      try {
+        const response = await calendarService.addNewCalendarTask(taskData);
+        console.log('Task added via API:', response);
+        apiSuccess = true;
+      } catch (apiError) {
+        console.warn('API call failed, adding to local state:', apiError);
+      }
+
+      // Add to local state regardless of API success
       const updatedItems = [...items, newTask];
       setItems(updatedItems);
 
@@ -159,11 +234,12 @@ export default function CalendarPage() {
         time: formData.startTime,
         notes: formData.notes || 'No notes',
         type: 'follow-up',
+        apiSuccess: apiSuccess,
       });
 
       toast({
         title: 'Success',
-        description: 'Task added successfully',
+        description: apiSuccess ? 'Task added successfully' : 'Task added locally (API unavailable)',
       });
 
       // Reset form and close dialog
@@ -310,10 +386,10 @@ export default function CalendarPage() {
                   {dayItems.length > 0 && (
                     <div className="flex flex-wrap gap-0.5">
                       {Array.from({ length: Math.min(eventDots, 2) }).map((_, i) => (
-                        <div key={`event-${i}`} className="h-1 w-1 rounded-full bg-accent" />
+                        <div key={`event-${i}`} className="h-2 w-2 rounded-full bg-orange-500 shadow-sm" />
                       ))}
                       {Array.from({ length: Math.min(followUpDots, 2) }).map((_, i) => (
-                        <div key={`followup-${i}`} className="h-1 w-1 rounded-full bg-secondary" />
+                        <div key={`followup-${i}`} className="h-2 w-2 rounded-full bg-secondary shadow-sm" />
                       ))}
                       {eventDots + followUpDots > 4 && (
                         <div className="text-xs text-muted-foreground">+{eventDots + followUpDots - 4}</div>
@@ -334,11 +410,11 @@ export default function CalendarPage() {
           className="flex gap-3 text-xs px-1"
         >
           <div className="flex items-center gap-1.5">
-            <div className="h-1.5 w-1.5 rounded-full bg-accent" />
+            <div className="h-2.5 w-2.5 rounded-full bg-orange-500 shadow-sm" />
             <span className="text-muted-foreground">Event</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="h-1.5 w-1.5 rounded-full bg-secondary" />
+            <div className="h-2.5 w-2.5 rounded-full bg-secondary shadow-sm" />
             <span className="text-muted-foreground">Follow-up</span>
           </div>
         </motion.div>
@@ -386,7 +462,7 @@ export default function CalendarPage() {
                       <CardContent className="p-2.5 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <div className={`h-6 w-6 rounded flex items-center justify-center flex-shrink-0 ${
-                            item.type === 'event' ? 'bg-accent' : 'bg-secondary/40'
+                            item.type === 'event' ? 'bg-orange-500' : 'bg-secondary/40'
                           }`}>
                             {item.type === 'event' ? (
                               <CalendarDays className="h-3 w-3 text-primary" />
@@ -406,7 +482,7 @@ export default function CalendarPage() {
                         <Badge 
                           variant={item.type === 'event' ? 'default' : 'outline'}
                           className={item.type === 'event' 
-                            ? 'bg-accent text-accent-foreground text-xs px-1.5 py-0' 
+                            ? 'bg-orange-500 text-white text-xs px-1.5 py-0' 
                             : 'text-xs px-1.5 py-0'
                           }
                         >

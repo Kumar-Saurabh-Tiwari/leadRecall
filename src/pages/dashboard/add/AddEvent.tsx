@@ -1,32 +1,44 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Upload, Calendar, MapPin, Briefcase, Users, FileText, Clock } from 'lucide-react';
+import { ArrowLeft, Upload, Calendar, MapPin, Briefcase, Users, FileText, Clock, Lock, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { eventService } from '@/services/eventService';
 import type { UserRole } from '@/types';
 
 export default function AddEvent() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
-    name: '',
-    location: '',
-    description: '',
+    eventTitle: '',
+    venueName: '',
+    address1: '',
+    address2: '',
+    city: '',
+    postcode: '',
+    locationCoordinates: '',
+    additionalNotes: '',
+    notes: '',
+    eventPageUrl: '',
     startDate: '',
     startTime: '',
     endDate: '',
     endTime: '',
-    role: 'attendee' as UserRole,
+    bEventPrivate: true,
+    ticketRequired: false,
+    costPerTicket: '',
   });
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,7 +76,7 @@ export default function AddEvent() {
     e.preventDefault();
 
     // Validation
-    if (!formData.name.trim()) {
+    if (!formData.eventTitle.trim()) {
       toast({
         title: 'Error',
         description: 'Event title is required',
@@ -73,10 +85,28 @@ export default function AddEvent() {
       return;
     }
 
-    if (!formData.location.trim()) {
+    if (!formData.venueName.trim()) {
       toast({
         title: 'Error',
-        description: 'Location is required',
+        description: 'Venue name is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.address1.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Address is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.city.trim()) {
+      toast({
+        title: 'Error',
+        description: 'City is required',
         variant: 'destructive',
       });
       return;
@@ -100,14 +130,41 @@ export default function AddEvent() {
       return;
     }
 
+    if (formData.ticketRequired && !formData.costPerTicket.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Cost per ticket is required when tickets are enabled',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Create date objects
-      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
-      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
+      let sMediaUrl = '';
 
-      if (endDateTime <= startDateTime) {
+      // Upload image if provided
+      if (imageFile) {
+        try {
+          sMediaUrl = await eventService.getDirectURL(imageFile, 'image');
+        } catch (error) {
+          toast({
+            title: 'Error',
+            description: 'Failed to upload image',
+            variant: 'destructive',
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Create date/time strings
+      const startDateTime = `${formData.startDate}T${formData.startTime}`;
+      const endDateTime = `${formData.endDate}T${formData.endTime}`;
+
+      // Validate end date is after start date
+      if (new Date(endDateTime) <= new Date(startDateTime)) {
         toast({
           title: 'Error',
           description: 'End date/time must be after start date/time',
@@ -117,29 +174,31 @@ export default function AddEvent() {
         return;
       }
 
-      // Add event with image data
-      const eventData = {
-        name: formData.name,
-        location: formData.location,
-        description: formData.description,
-        date: startDateTime,
-        endDate: endDateTime,
-        role: formData.role,
-        image: imagePreview || undefined,
-      };
+      // Prepare event data matching API schema
+      const eventDataPayload = {
+        sName: formData.eventTitle,
+        dStartDate: startDateTime,
+        dEndDate: endDateTime,
+        sLogo: sMediaUrl,
+        adminEmail: user?.email || '',
+        sLocationPhysical: formData.address1,
+        sShortDescription: formData.additionalNotes
+      }
 
-      eventService.add(eventData);
+      // Call API to create event - wrap in eventData object for backend
+      await eventService.addNewLeadEvent({ eventData: eventDataPayload });
 
       toast({
         title: 'Success',
-        description: 'Event added successfully',
+        description: 'Event created successfully',
       });
 
       navigate('/dashboard/events');
     } catch (error) {
+      console.error('Event creation error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add event',
+        description: error instanceof Error ? error.message : 'Failed to create event',
         variant: 'destructive',
       });
     } finally {
@@ -216,28 +275,30 @@ export default function AddEvent() {
                       </motion.div>
                     )}
 
-                    <label className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-border/50 rounded-xl cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all group">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="hidden"
-                      />
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        className="text-center"
-                      >
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
-                          <Upload className="h-6 w-6 text-primary" />
-                        </div>
-                        <p className="text-sm font-semibold text-foreground">
-                          Upload event image
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          PNG, JPG up to 5MB (optional)
-                        </p>
-                      </motion.div>
-                    </label>
+                    {!imagePreview && (
+                      <label className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-border/50 rounded-xl cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all group">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="hidden"
+                        />
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          className="text-center"
+                        >
+                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
+                            <Upload className="h-6 w-6 text-primary" />
+                          </div>
+                          <p className="text-sm font-semibold text-foreground">
+                            Upload event image
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            PNG, JPG up to 5MB (optional)
+                          </p>
+                        </motion.div>
+                      </label>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -259,47 +320,111 @@ export default function AddEvent() {
                 <CardContent className="space-y-4">
                   {/* Event Title */}
                   <div>
-                    <Label htmlFor="name" className="text-sm font-medium mb-2">
+                    <Label htmlFor="eventTitle" className="text-sm font-medium mb-2">
                       Event Title <span className="text-destructive">*</span>
                     </Label>
                     <Input
-                      id="name"
-                      name="name"
+                      id="eventTitle"
+                      name="eventTitle"
                       type="text"
                       placeholder="e.g., DevCon 2025, Tech Summit"
-                      value={formData.name}
+                      value={formData.eventTitle}
                       onChange={handleInputChange}
                       className="bg-secondary/50 border-border/50 focus:ring-primary"
                     />
                   </div>
 
-                  {/* Location */}
+                  {/* Venue Name */}
                   <div>
-                    <Label htmlFor="location" className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <Label htmlFor="venueName" className="text-sm font-medium mb-2 flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-primary" />
-                      Location <span className="text-destructive">*</span>
+                      Venue Name <span className="text-destructive">*</span>
                     </Label>
                     <Input
-                      id="location"
-                      name="location"
+                      id="venueName"
+                      name="venueName"
                       type="text"
-                      placeholder="e.g., San Francisco, CA"
-                      value={formData.location}
+                      placeholder="e.g., San Francisco Convention Center"
+                      value={formData.venueName}
                       onChange={handleInputChange}
                       className="bg-secondary/50 border-border/50 focus:ring-primary"
                     />
                   </div>
 
-                  {/* Description */}
+                  {/* Address 1 */}
                   <div>
-                    <Label htmlFor="description" className="text-sm font-medium mb-2">
+                    <Label htmlFor="address1" className="text-sm font-medium mb-2">
+                      Address <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="address1"
+                      name="address1"
+                      type="text"
+                      placeholder="e.g., 747 Market Street"
+                      value={formData.address1}
+                      onChange={handleInputChange}
+                      className="bg-secondary/50 border-border/50 focus:ring-primary"
+                    />
+                  </div>
+
+                  {/* City & Postcode */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="city" className="text-sm font-medium mb-2">
+                        City <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="city"
+                        name="city"
+                        type="text"
+                        placeholder="e.g., San Francisco"
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        className="bg-secondary/50 border-border/50 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="postcode" className="text-sm font-medium mb-2">
+                        Postcode
+                      </Label>
+                      <Input
+                        id="postcode"
+                        name="postcode"
+                        type="text"
+                        placeholder="e.g., 94103"
+                        value={formData.postcode}
+                        onChange={handleInputChange}
+                        className="bg-secondary/50 border-border/50 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Event Page URL */}
+                  <div>
+                    <Label htmlFor="eventPageUrl" className="text-sm font-medium mb-2">
+                      Event Page URL (Optional)
+                    </Label>
+                    <Input
+                      id="eventPageUrl"
+                      name="eventPageUrl"
+                      type="url"
+                      placeholder="e.g., https://example.com/event"
+                      value={formData.eventPageUrl}
+                      onChange={handleInputChange}
+                      className="bg-secondary/50 border-border/50 focus:ring-primary"
+                    />
+                  </div>
+
+                  {/* Additional Notes */}
+                  <div>
+                    <Label htmlFor="additionalNotes" className="text-sm font-medium mb-2">
                       Description
                     </Label>
                     <Textarea
-                      id="description"
-                      name="description"
+                      id="additionalNotes"
+                      name="additionalNotes"
                       placeholder="Add event details, agenda, schedule, or notes..."
-                      value={formData.description}
+                      value={formData.additionalNotes}
                       onChange={handleInputChange}
                       rows={3}
                       className="bg-secondary/50 border-border/50 resize-none focus:ring-primary"
@@ -388,7 +513,7 @@ export default function AddEvent() {
               </Card>
             </motion.div>
 
-            {/* Role Selection Card */}
+            {/* Settings Card */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -397,49 +522,72 @@ export default function AddEvent() {
               <Card className="border-border/50 shadow-card">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    Your Role
+                    <Lock className="h-5 w-5 text-primary" />
+                    Event Settings
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Select your participation role at this event
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, role: 'attendee' }))}
-                      className={`p-4 rounded-lg border-2 transition-all duration-200 group ${
-                        formData.role === 'attendee'
-                          ? 'border-primary bg-primary/10 shadow-md'
-                          : 'border-border/50 bg-secondary/30 hover:border-primary/50 hover:bg-primary/5'
-                      }`}
-                    >
-                      <div className="flex flex-col items-center gap-2">
-                        <Users className={`h-5 w-5 transition-colors ${
-                          formData.role === 'attendee' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
-                        }`} />
-                        <p className="text-sm font-semibold text-foreground">Attendee</p>
-                        <p className="text-xs text-muted-foreground">Visiting</p>
+                <CardContent className="space-y-5">
+                  {/* Privacy Toggle */}
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-border/30 bg-secondary/30">
+                    <div className="flex items-center gap-3">
+                      <Lock className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Private Event</p>
+                        <p className="text-xs text-muted-foreground">Only invited guests can attend</p>
                       </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, role: 'exhibitor' }))}
-                      className={`p-4 rounded-lg border-2 transition-all duration-200 group ${
-                        formData.role === 'exhibitor'
-                          ? 'border-primary bg-primary/10 shadow-md'
-                          : 'border-border/50 bg-secondary/30 hover:border-primary/50 hover:bg-primary/5'
-                      }`}
-                    >
-                      <div className="flex flex-col items-center gap-2">
-                        <Briefcase className={`h-5 w-5 transition-colors ${
-                          formData.role === 'exhibitor' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
-                        }`} />
-                        <p className="text-sm font-semibold text-foreground">Exhibitor</p>
-                        <p className="text-xs text-muted-foreground">Presenting</p>
+                    </div>
+                    <Checkbox
+                      checked={formData.bEventPrivate}
+                      onCheckedChange={(checked) =>
+                        setFormData(prev => ({ ...prev, bEventPrivate: checked as boolean }))
+                      }
+                      className="h-5 w-5"
+                    />
+                  </div>
+
+                  {/* Ticket Required Toggle */}
+                  <div className="border-t border-border/30 pt-5">
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border/30 bg-secondary/30">
+                      <div className="flex items-center gap-3">
+                        <Ticket className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">Ticket Required</p>
+                          <p className="text-xs text-muted-foreground">Charge attendees to register</p>
+                        </div>
                       </div>
-                    </button>
+                      <Checkbox
+                        checked={formData.ticketRequired}
+                        onCheckedChange={(checked) =>
+                          setFormData(prev => ({ ...prev, ticketRequired: checked as boolean }))
+                        }
+                        className="h-5 w-5"
+                      />
+                    </div>
+
+                    {/* Cost Per Ticket - Only show if ticketRequired is true */}
+                    {formData.ticketRequired && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="mt-4"
+                      >
+                        <Label htmlFor="costPerTicket" className="text-sm font-medium mb-2">
+                          Cost Per Ticket <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="costPerTicket"
+                          name="costPerTicket"
+                          type="number"
+                          placeholder="e.g., 50.00"
+                          step="0.01"
+                          min="0"
+                          value={formData.costPerTicket}
+                          onChange={handleInputChange}
+                          className="bg-secondary/50 border-border/50 focus:ring-primary"
+                        />
+                      </motion.div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -8,17 +8,14 @@ import { Button } from '@/components/ui/button';
 import { eventService } from '@/services/eventService';
 import { Event } from '@/types';
 import { format } from 'date-fns';
+import { useEvents } from '@/contexts/EventContext';
 
 type TimelineFilter = 'all' | 'upcoming' | 'live' | 'past';
 
 export default function Events() {
   const navigate = useNavigate();
-  const [events, setEvents] = useState<Event[]>([]);
+  const { events, isLoading } = useEvents();
   const [timelineFilter, setTimelineFilter] = useState<TimelineFilter>('all');
-
-  useEffect(() => {
-    setEvents(eventService.getAll());
-  }, []);
 
   const getEventTimeline = (eventDate: Date): 'upcoming' | 'live' | 'past' => {
     const today = new Date();
