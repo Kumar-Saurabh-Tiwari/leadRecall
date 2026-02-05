@@ -17,7 +17,7 @@ import { exhibitorService } from '@/services/exhibitorService';
 export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login } = useAuth();
+  const { login, loginEmailOnly } = useAuth();
   const { toast } = useToast();
   
   const initialRole = (searchParams.get('role') as UserRole) || 'exhibitor';
@@ -47,19 +47,8 @@ export default function Login() {
       if (response?.data?.verified === true) {
         const userData = response.data.user;
         
-        // Create a complete user object with API data
-        const userSession = {
-          id: userData._id,
-          name: userData.sUserName,
-          email: userData.sEmail,
-          company: userData.sCompanyName || undefined,
-          role: role,
-          checkInStatus: userData.sCheckInStatus,
-          eventId: userData.iEventId,
-        };
-        
-        // Store in localStorage
-        localStorage.setItem('leadrecall_user', JSON.stringify(userSession));
+        // Call loginEmailOnly to update AuthContext state
+        await loginEmailOnly(userData, role);
         
         // Show success message
         toast({
@@ -67,10 +56,8 @@ export default function Login() {
           description: `You have successfully logged in as ${role}.`,
         });
         
-        // Small delay to ensure state updates before navigation
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 500);
+        // Immediate redirect to dashboard
+        navigate('/dashboard');
       } else {
         toast({
           title: 'Login failed',
