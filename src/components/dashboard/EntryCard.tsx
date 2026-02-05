@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Entry } from '@/types';
 import { format } from 'date-fns';
-import { Building2, Calendar } from 'lucide-react';
+import { Building2, Calendar, User } from 'lucide-react';
 
 interface EntryCardProps {
   entry: Entry;
@@ -19,9 +19,24 @@ export function EntryCard({ entry, onClick, delay = 0 }: EntryCardProps) {
       transition={{ duration: 0.3, delay }}
     >
       <Card 
-        className="shadow-card hover:shadow-elevated transition-all cursor-pointer group border-border/50"
+        className="shadow-card hover:shadow-elevated transition-all cursor-pointer group border-border/50 overflow-hidden"
         onClick={onClick}
       >
+        {/* Image Section */}
+        {entry.image ? (
+          <div className="relative h-40 overflow-hidden bg-muted">
+            <img 
+              src={entry.image} 
+              alt={entry.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+        ) : (
+          <div className="h-40 bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+            <User className="h-16 w-16 text-muted-foreground/30" />
+          </div>
+        )}
+        
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex-1 min-w-0">

@@ -6,7 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
+import RegisterExhibitor from "./pages/RegisterExhibitor";
+import RegisterAttendee from "./pages/RegisterAttendee";
 import DashboardLayout from "./pages/DashboardLayout";
 import Home from "./pages/dashboard/Home";
 import Events from "./pages/dashboard/Events";
@@ -35,7 +36,9 @@ const App = () => (
               {/* Public Routes */}
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route path="/register-exhibitor" element={<RegisterExhibitor />} />
+              <Route path="/register-attendee" element={<RegisterAttendee />} />
+              <Route path="/register" element={<Navigate to="/register-exhibitor" replace />} />
               
               {/* Protected Dashboard Routes */}
               <Route path="/dashboard" element={<DashboardLayout />}>

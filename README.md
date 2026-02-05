@@ -1,73 +1,110 @@
-# Welcome to your Lovable project
+# LeadRecall Connect
 
-## Project info
+LeadRecall Connect is a web application designed to help attendees and exhibitors manage leads, connections, and events efficiently. Built with React, TypeScript, and Vite, it provides a seamless experience for networking at events through features like QR code scanning, contact management, and event scheduling.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Features
 
-## How can I edit this code?
+- **User Roles**: Support for attendees and exhibitors with tailored functionalities.
+- **Event Management**: Create, view, and manage events.
+- **Contact Management**: Add and organize contacts from events.
+- **QR/OCR Scanning**: Scan QR codes or use OCR to quickly add contacts.
+- **Calendar Integration**: View and manage event schedules.
+- **Dashboard**: Personalized dashboard for users to access all features.
+- **Authentication**: Secure login and registration system.
 
-There are several ways of editing your application.
+## App Workflow
 
-**Use Lovable**
+1. **Landing Page**: Users start at the landing page, which introduces the app and provides options to register or log in.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+2. **Registration**:
+   - Choose role: Attendee or Exhibitor.
+   - Fill out registration form specific to the role.
+   - Upon successful registration, users are redirected to the login page.
 
-Changes made via Lovable will be committed automatically to this repo.
+3. **Login**:
+   - Enter credentials to authenticate.
+   - Successful login redirects to the dashboard.
 
-**Use your preferred IDE**
+4. **Dashboard**:
+   - **Home**: Overview of recent activities, upcoming events, and quick stats.
+   - **Events**: Browse and manage events. View event details, add new events.
+   - **Calendar**: Integrated calendar view for scheduling and event reminders.
+   - **Profile**: Manage personal information and settings.
+   - **Add Entry**: Use the floating action button to add contacts, events, or scan QR/OCR.
+     - Add Contact: Manually enter contact details.
+     - Add Event: Create new events.
+     - Scan QR: Use device camera to scan QR codes for quick contact addition.
+     - Scan OCR: Extract text from images to add contacts.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+5. **Additional Features**:
+   - **Entry Details**: View and edit individual entries.
+   - **Event Details**: Detailed view of events, including associated contacts.
+   - **Offline Support**: PWA features for offline access.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Technologies Used
 
-Follow these steps:
+- **Frontend**: React, TypeScript, Vite
+- **Styling**: Tailwind CSS, shadcn/ui components
+- **Build Tool**: Vite
+- **Testing**: Vitest
+- **Linting**: ESLint
+- **Package Manager**: npm or Bun (based on lockfile)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## Installation
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+1. Clone the repository:
+   ```sh
+   git clone <YOUR_GIT_URL>
+   cd leadrecall-connect
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. Install dependencies:
+   ```sh
+   npm install
+   # or
+   bun install
+   ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+3. Start the development server:
+   ```sh
+   npm run dev
+   # or
+   bun run dev
+   ```
 
-**Edit a file directly in GitHub**
+4. Build for production:
+   ```sh
+   npm run build
+   # or
+   bun run build
+   ```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+5. Preview production build:
+   ```sh
+   npm run preview
+   # or
+   bun run preview
+   ```
 
-**Use GitHub Codespaces**
+## Usage
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- Access the app at `http://localhost:5173` (default Vite port).
+- Register as a new user or log in with existing credentials.
+- Navigate through the dashboard to manage events and contacts.
+- Use the add entry FAB for quick actions like scanning QR codes.
 
-## What technologies are used for this project?
+## Deployment
 
-This project is built with:
+The app can be deployed to any static hosting service like Vercel, Netlify, or GitHub Pages. Build the project and upload the `dist` folder.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
 
-## How can I deploy this project?
+## Contributing
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+1. Fork the repository.
+2. Create a feature branch.
+3. Make changes and commit.
+4. Push to your fork and create a pull request.
 
-## Can I connect a custom domain to my Lovable project?
+## License
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+This project is licensed under the MIT License.

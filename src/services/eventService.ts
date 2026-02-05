@@ -1,6 +1,7 @@
 import { Event, UserRole } from '@/types';
+import { environment } from '@/config/environment';
 
-let mockEvents: Event[] = [
+const mockEvents: Event[] = [
   // Past Events
   {
     id: '1',
@@ -9,6 +10,7 @@ let mockEvents: Event[] = [
     location: 'San Francisco, CA',
     role: 'exhibitor',
     description: 'Annual developer conference featuring the latest in tech.',
+    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop',
   },
   {
     id: '2',
@@ -17,6 +19,7 @@ let mockEvents: Event[] = [
     location: 'New York, NY',
     role: 'attendee',
     description: 'The premier SaaS industry gathering.',
+    image: 'https://images.unsplash.com/photo-1540575467063-178f50902f4e?w=400&h=300&fit=crop',
   },
   {
     id: '3',
@@ -25,6 +28,7 @@ let mockEvents: Event[] = [
     location: 'Austin, TX',
     role: 'exhibitor',
     description: 'Explore cutting-edge AI innovations.',
+    image: 'https://images.unsplash.com/photo-1677442d019cecf31b1a77c71b5affa7c1a3e4fa?w=400&h=300&fit=crop',
   },
   {
     id: '4',
@@ -33,6 +37,7 @@ let mockEvents: Event[] = [
     location: 'Boston, MA',
     role: 'attendee',
     description: 'Network with founders and investors.',
+    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop',
   },
   {
     id: '5',
@@ -41,6 +46,7 @@ let mockEvents: Event[] = [
     location: 'Seattle, WA',
     role: 'exhibitor',
     description: 'Executive-level tech discussions.',
+    image: 'https://images.unsplash.com/photo-1549692520-acc6669e2f0c?w=400&h=300&fit=crop',
   },
   {
     id: '6',
@@ -49,6 +55,7 @@ let mockEvents: Event[] = [
     location: 'Lisbon, Portugal',
     role: 'exhibitor',
     description: 'Europe\'s largest tech conference.',
+    image: 'https://images.unsplash.com/photo-1540575467063-178f50902f4e?w=400&h=300&fit=crop',
   },
   {
     id: '7',
@@ -57,6 +64,7 @@ let mockEvents: Event[] = [
     location: 'Denver, CO',
     role: 'attendee',
     description: 'Cloud infrastructure and DevOps focused event.',
+    image: 'https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=400&h=300&fit=crop',
   },
   {
     id: '8',
@@ -65,6 +73,7 @@ let mockEvents: Event[] = [
     location: 'Washington, DC',
     role: 'exhibitor',
     description: 'Latest in cybersecurity trends and solutions.',
+    image: 'https://images.unsplash.com/photo-1677442d019cecf31b1a77c71b5affa7c1a3e4fa?w=400&h=300&fit=crop',
   },
   // Live Events (Today)
   {
@@ -74,6 +83,7 @@ let mockEvents: Event[] = [
     location: 'Virtual',
     role: 'exhibitor',
     description: 'Live streaming of cutting-edge technology innovations happening now.',
+    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop',
   },
   {
     id: '8.6',
@@ -82,6 +92,7 @@ let mockEvents: Event[] = [
     location: 'San Francisco, CA',
     role: 'attendee',
     description: 'Real-time networking and tech talks happening today.',
+    image: 'https://images.unsplash.com/photo-1540575467063-178f50902f4e?w=400&h=300&fit=crop',
   },
   // Upcoming Events
   {
@@ -91,6 +102,7 @@ let mockEvents: Event[] = [
     location: 'Barcelona, Spain',
     role: 'exhibitor',
     description: 'Premier mobile industry event showcasing innovation.',
+    image: 'https://images.unsplash.com/photo-1549692520-acc6669e2f0c?w=400&h=300&fit=crop',
   },
   {
     id: '10',
@@ -99,6 +111,7 @@ let mockEvents: Event[] = [
     location: 'Mountain View, CA',
     role: 'attendee',
     description: 'Google\'s annual developer conference.',
+    image: 'https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=400&h=300&fit=crop',
   },
   {
     id: '11',
@@ -107,6 +120,7 @@ let mockEvents: Event[] = [
     location: 'San Jose, CA',
     role: 'attendee',
     description: 'Apple\'s Worldwide Developers Conference.',
+    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop',
   },
   {
     id: '12',
@@ -115,6 +129,7 @@ let mockEvents: Event[] = [
     location: 'Las Vegas, NV',
     role: 'exhibitor',
     description: 'AWS\'s premier cloud computing conference.',
+    image: 'https://images.unsplash.com/photo-1540575467063-178f50902f4e?w=400&h=300&fit=crop',
   },
   {
     id: '13',
@@ -123,6 +138,7 @@ let mockEvents: Event[] = [
     location: 'Chicago, IL',
     role: 'exhibitor',
     description: 'Discover breakthrough technologies and innovations.',
+    image: 'https://images.unsplash.com/photo-1677442d019cecf31b1a77c71b5affa7c1a3e4fa?w=400&h=300&fit=crop',
   },
   {
     id: '14',
@@ -131,6 +147,7 @@ let mockEvents: Event[] = [
     location: 'San Francisco, CA',
     role: 'attendee',
     description: 'Celebrate and connect with product makers worldwide.',
+    image: 'https://images.unsplash.com/photo-1549692520-acc6669e2f0c?w=400&h=300&fit=crop',
   },
 ];
 
@@ -181,5 +198,76 @@ export const eventService = {
     };
     mockEvents.push(newEvent);
     return newEvent;
+  },
+
+  // Backend APIs
+
+  addNewLeadEvent: async (data: unknown): Promise<unknown> => {
+    const response = await fetch(`${environment.apiUrl}/users/addNewLeadEvent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Anonymous': 'true',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  },
+
+  getLeadEvents: async (adminEmail: string): Promise<unknown> => {
+    const response = await fetch(`${environment.apiUrl}/users/getLeadEvents?adminEmail=${adminEmail}`, {
+      method: 'GET',
+      headers: {
+        'Anonymous': 'true',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  },
+
+  getLeadEventData: async (adminEmail: string, userType: string, eventId: string): Promise<unknown> => {
+    const response = await fetch(`${environment.apiUrl}/users/getLeadEventData?adminEmail=${adminEmail}&userType=${userType}&eventId=${eventId}`, {
+      method: 'GET',
+      headers: {
+        'Anonymous': 'true',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  },
+
+  getLeadUserByEmail: async (adminEmail: string): Promise<unknown> => {
+    const response = await fetch(`${environment.apiUrl}/users/register-leaduser/${adminEmail}`, {
+      method: 'GET',
+      headers: {
+        'Anonymous': 'true',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  },
+
+  inviteLeadUserToEventTeam: async (data: unknown): Promise<unknown> => {
+    const response = await fetch(`${environment.apiUrl}/users/invite-user-to-event-team`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Anonymous': 'true',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
   },
 };

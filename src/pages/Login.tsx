@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { attendeeService } from '@/services/attendeeService';
+import { exhibitorService } from '@/services/exhibitorService';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -23,8 +25,72 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loginMode, setLoginMode] = useState<'email-only' | 'password'>('email-only');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailOnlyLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast({
+        title: 'Missing email',
+        description: 'Please enter your email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const service = role === 'exhibitor' ? exhibitorService : attendeeService;
+      const response = await service.verifyAndLoginLeadRegisterUser(email);
+      
+      // Check if verification was successful
+      if (response?.data?.verified === true) {
+        const userData = response.data.user;
+        
+        // Create a complete user object with API data
+        const userSession = {
+          id: userData._id,
+          name: userData.sUserName,
+          email: userData.sEmail,
+          company: userData.sCompanyName || undefined,
+          role: role,
+          checkInStatus: userData.sCheckInStatus,
+          eventId: userData.iEventId,
+        };
+        
+        // Store in localStorage
+        localStorage.setItem('leadrecall_user', JSON.stringify(userSession));
+        
+        // Show success message
+        toast({
+          title: 'Welcome!',
+          description: `You have successfully logged in as ${role}.`,
+        });
+        
+        // Small delay to ensure state updates before navigation
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 500);
+      } else {
+        toast({
+          title: 'Login failed',
+          description: 'Email verification failed. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: 'Login failed',
+        description: 'Email not found. Please check your email or register.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast({
@@ -51,6 +117,14 @@ export default function Login() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    if (loginMode === 'email-only') {
+      await handleEmailOnlyLogin(e);
+    } else {
+      await handlePasswordLogin(e);
     }
   };
 
@@ -91,6 +165,26 @@ export default function Login() {
                 </TabsList>
               </Tabs>
 
+              {/* Login Mode Selector */}
+              <div className="mb-6 flex gap-2">
+                <Button
+                  type="button"
+                  variant={loginMode === 'email-only' ? 'default' : 'outline'}
+                  className={`flex-1 ${loginMode === 'email-only' ? 'gradient-primary' : ''}`}
+                  onClick={() => setLoginMode('email-only')}
+                >
+                  Email Only
+                </Button>
+                <Button
+                  type="button"
+                  variant={loginMode === 'password' ? 'default' : 'outline'}
+                  className={`flex-1 ${loginMode === 'password' ? 'gradient-primary' : ''}`}
+                  onClick={() => setLoginMode('password')}
+                >
+                  Email & Password
+                </Button>
+              </div>
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
@@ -103,24 +197,28 @@ export default function Login() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
+                      required
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10"
-                    />
+                {loginMode === 'password' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10"
+                        required={loginMode === 'password'}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <Button
                   type="submit"
@@ -131,17 +229,17 @@ export default function Login() {
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Signing in...
+                      {loginMode === 'email-only' ? 'Verifying...' : 'Signing in...'}
                     </>
                   ) : (
-                    'Sign In'
+                    loginMode === 'email-only' ? 'Verify & Login' : 'Sign In'
                   )}
                 </Button>
               </form>
 
               <div className="mt-6 text-center text-sm">
                 <span className="text-muted-foreground">Don't have an account? </span>
-                <Link to={`/register?role=${role}`} className="text-primary font-medium hover:underline">
+                <Link to={`/register-${role}`} className="text-primary font-medium hover:underline">
                   Register
                 </Link>
               </div>

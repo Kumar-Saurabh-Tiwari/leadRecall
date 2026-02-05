@@ -1,18 +1,62 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Building2, LogOut, Edit, ChevronRight, Shield, Bell, HelpCircle, Calendar, MapPin, Award } from 'lucide-react';
+import { Mail, Building2, LogOut, Edit, ChevronRight, Shield, Bell, HelpCircle, Calendar, MapPin, Award, Loader } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { profileService } from '@/services/profileService';
+import { ProfileData } from '@/types';
+import { useEffect, useState } from 'react';
 
 export default function Profile() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.email) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await profileService.getLeadUserProfileByEmail(user.email);
+        setProfileData(response.data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+        setError('Failed to load profile data');
+        toast({
+          title: 'Error',
+          description: 'Failed to load profile information',
+          variant: 'destructive'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user?.email, toast]);
+
+  const displayName = profileData?.sUserName || user?.name || 'User';
+  const displayEmail = profileData?.sEmail || user?.email || '';
+  const displayCompany = profileData?.sCompanyName || user?.company || '';
+  const displayRole = profileData?.sRegistrationType || user?.role || '';
+  const displayPhone = profileData?.sPhoneNumber || '';
+  const displayMediaUrl = profileData?.sMediaUrl || '';
+  const displayCheckInStatus = profileData?.sCheckInStatus || '';
+  const displayEventName = profileData?.sEventName || '';
+  const displayBoothNumber = profileData?.sBoothNumber || '';
+  const displayLinkedinUrl = profileData?.sLinkedinUrl || '';
 
   const handleLogout = () => {
     logout();
@@ -54,6 +98,23 @@ export default function Profile() {
       </header>
 
       <div className="p-4 pb-20 space-y-6">
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2 text-muted-foreground">Loading profile...</span>
+          </div>
+        )}
+
+        {!loading && error && (
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardContent className="pt-6">
+              <p className="text-destructive text-sm">{error}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {!loading && !error && (
+          <>
         {/* Profile Header Card */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -65,18 +126,21 @@ export default function Profile() {
             <CardContent className="pt-0 -mt-12 relative z-10">
               <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-6">
                 <Avatar className="h-24 w-24 border-4 border-card shadow-lg flex-shrink-0">
+                  {displayMediaUrl && (
+                    <AvatarImage src={displayMediaUrl} alt={displayName} />
+                  )}
                   <AvatarFallback className="gradient-primary text-primary-foreground text-2xl font-bold">
-                    {user?.name ? getInitials(user.name) : 'U'}
+                    {getInitials(displayName)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-foreground">{user?.name}</h2>
-                  <p className="text-sm text-muted-foreground mb-2">{user?.email}</p>
+                  <h2 className="text-2xl font-bold text-foreground">{displayName}</h2>
+                  <p className="text-sm text-muted-foreground mb-2">{displayEmail}</p>
                   <Badge 
                     className="w-fit text-xs py-1"
-                    variant={user?.role === 'exhibitor' ? 'default' : 'secondary'}
+                    variant={displayRole === 'exhibitor' ? 'default' : 'secondary'}
                   >
-                    {user?.role === 'exhibitor' ? '🎯 Exhibitor' : '👤 Attendee'}
+                    {displayRole === 'exhibitor' ? '🎯 Exhibitor' : '👤 Attendee'}
                   </Badge>
                 </div>
               </div>
@@ -91,15 +155,24 @@ export default function Profile() {
                     <Mail className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground">Email</p>
-                      <p className="text-foreground break-all">{user?.email}</p>
+                      <p className="text-foreground break-all">{displayEmail}</p>
                     </div>
                   </div>
-                  {user?.company && (
+                  {displayCompany && (
                     <div className="flex items-start gap-3 text-sm">
                       <Building2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-muted-foreground">Company</p>
-                        <p className="text-foreground">{user.company}</p>
+                        <p className="text-foreground">{displayCompany}</p>
+                      </div>
+                    </div>
+                  )}
+                  {displayPhone && (
+                    <div className="flex items-start gap-3 text-sm">
+                      <Mail className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground">Phone</p>
+                        <p className="text-foreground">{displayPhone}</p>
                       </div>
                     </div>
                   )}
@@ -185,35 +258,49 @@ export default function Profile() {
         >
           <Card className="shadow-card border-border/50">
             <CardHeader>
-              <CardTitle className="text-base">Account Stats</CardTitle>
+              <CardTitle className="text-base">Account Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="flex justify-center mb-2">
-                    <Calendar className="h-5 w-5 text-primary" />
+              <div className="space-y-4">
+                {displayEventName && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Event</span>
+                    <span className="text-sm font-medium text-foreground">{displayEventName}</span>
                   </div>
-                  <p className="text-2xl font-bold text-foreground">-</p>
-                  <p className="text-xs text-muted-foreground mt-1">Events</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex justify-center mb-2">
-                    <Award className="h-5 w-5 text-primary" />
+                )}
+                {displayCheckInStatus && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Check-in Status</span>
+                    <Badge variant={displayCheckInStatus === 'verified' ? 'default' : 'secondary'}>
+                      {displayCheckInStatus}
+                    </Badge>
                   </div>
-                  <p className="text-2xl font-bold text-foreground">-</p>
-                  <p className="text-xs text-muted-foreground mt-1">Connections</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex justify-center mb-2">
-                    <MapPin className="h-5 w-5 text-primary" />
+                )}
+                {displayBoothNumber && displayRole === 'exhibitor' && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Booth Number</span>
+                    <span className="text-sm font-medium text-foreground">{displayBoothNumber}</span>
                   </div>
-                  <p className="text-2xl font-bold text-foreground">-</p>
-                  <p className="text-xs text-muted-foreground mt-1">Visits</p>
-                </div>
+                )}
+                {displayLinkedinUrl && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">LinkedIn</span>
+                    <a 
+                      href={displayLinkedinUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      View Profile
+                    </a>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </motion.div>
+          </>
+        )}
 
         {/* Logout Button */}
         <motion.div

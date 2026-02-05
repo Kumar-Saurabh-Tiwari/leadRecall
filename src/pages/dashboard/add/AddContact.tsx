@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, User, Building2, Calendar, FileText, Loader2, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,16 +12,65 @@ import { useToast } from '@/hooks/use-toast';
 import { entryService } from '@/services/entryService';
 import { UserRole } from '@/types';
 
+interface LocationState {
+  selectedEvent?: {
+    eventId: string;
+    eventName: string;
+  };
+}
+
+interface ContactFormData {
+  sFirstName: string;
+  sLastName: string;
+  sEmail: Array<{ Email: string }>;
+  sCompany: string;
+  sDesignation: string;
+  sEventTitles: Array<{
+    sTitle: string;
+    EventId: string;
+    startDate: string;
+    endDate: string;
+    attended: boolean;
+  }>;
+  contacts: Array<{
+    sCountryCode: string;
+    sContactNumber: string;
+    sContactType: string;
+  }>;
+  profiles: Array<{
+    sProfileLink: string;
+    sProfileType: string;
+  }>;
+  notes: string;
+}
+
 export default function AddContact() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   
   const [isLoading, setIsLoading] = useState(false);
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [company, setCompany] = useState('');
+  const [designation, setDesignation] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
   const [event, setEvent] = useState('');
   const [notes, setNotes] = useState('');
+  const [selectedEventData, setSelectedEventData] = useState<LocationState['selectedEvent'] | null>(null);
+
+  // Get selected event from navigation state
+  useEffect(() => {
+    const state = location.state as LocationState;
+    if (state?.selectedEvent) {
+      setSelectedEventData(state.selectedEvent);
+      setEvent(state.selectedEvent.eventName);
+      console.log('Event data received in AddContact:', state.selectedEvent);
+    }
+  }, [location.state]);
 
   // Attendees add Exhibitors, Exhibitors add Attendees
   const targetType: UserRole = user?.role === 'exhibitor' ? 'attendee' : 'exhibitor';
@@ -30,10 +79,10 @@ export default function AddContact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim() || !company.trim() || !event.trim()) {
+    if (!firstName.trim() || !lastName.trim() || !company.trim() || !event.trim()) {
       toast({
         title: 'Missing fields',
-        description: 'Please fill in name, company, and event.',
+        description: 'Please fill in first name, last name, company, and event.',
         variant: 'destructive',
       });
       return;
@@ -44,17 +93,59 @@ export default function AddContact() {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    entryService.add({
-      name: name.trim(),
+    // Build contact form data structure
+    const contactDetails: ContactFormData = {
+      sFirstName: firstName.trim(),
+      sLastName: lastName.trim(),
+      sEmail: [{ Email: email.trim() || 'N/A' }],
+      sCompany: company.trim(),
+      sDesignation: designation.trim() || 'N/A',
+      sEventTitles: [
+        {
+          sTitle: selectedEventData?.eventName || event.trim() || 'N/A',
+          EventId: selectedEventData?.eventId || '',
+          startDate: '',
+          endDate: '',
+          attended: false
+        }
+      ],
+      contacts: [
+        {
+          sCountryCode: '',
+          sContactNumber: phoneNumber.trim() || 'N/A',
+          sContactType: 'Work'
+        }
+      ],
+      profiles: [
+        {
+          sProfileLink: linkedinUrl.trim() || 'N/A',
+          sProfileType: 'linkedin'
+        }
+      ],
+      notes: notes.trim()
+    };
+    
+    console.log('Creating contact with structured data:', contactDetails);
+    
+    const entryData = {
+      name: `${firstName.trim()} ${lastName.trim()}`,
       company: company.trim(),
-      event: event.trim(),
+      event: selectedEventData?.eventName || event.trim() || 'N/A',
       notes: notes.trim(),
       type: targetType,
-    });
+      email: email.trim() || undefined,
+      phone: phoneNumber.trim() || undefined,
+      linkedin: linkedinUrl.trim() || undefined,
+    };
+    
+    console.log('Entry data to be submitted:', entryData);
+    console.log('Contact details structure:', contactDetails);
+    
+    entryService.add(entryData);
 
     toast({
       title: `${targetLabel} added!`,
-      description: `${name} has been added to your leads.`,
+      description: `${firstName} ${lastName} has been added to your leads.`,
     });
     
     navigate('/dashboard');
@@ -99,17 +190,65 @@ export default function AddContact() {
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="contact-first-name">First Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="contact-first-name"
+                    placeholder="First name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="pl-10"
+                    maxLength={50}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contact-last-name">Last Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="contact-last-name"
+                    placeholder="Last name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="pl-10"
+                    maxLength={50}
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="contact-name">Name</Label>
+              <Label htmlFor="contact-email">Email</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="contact-name"
-                  placeholder={`${targetLabel} name`}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  id="contact-email"
+                  placeholder="Email address"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
                   maxLength={100}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contact-phone">Phone Number</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="contact-phone"
+                  placeholder="Phone number"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="pl-10"
+                  maxLength={20}
                 />
               </div>
             </div>
@@ -130,6 +269,36 @@ export default function AddContact() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="contact-designation">Designation</Label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="contact-designation"
+                  placeholder="Job title or designation"
+                  value={designation}
+                  onChange={(e) => setDesignation(e.target.value)}
+                  className="pl-10"
+                  maxLength={100}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contact-linkedin">LinkedIn URL</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="contact-linkedin"
+                  placeholder="LinkedIn profile URL"
+                  value={linkedinUrl}
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                  className="pl-10"
+                  maxLength={200}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="contact-event">Event</Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -140,6 +309,7 @@ export default function AddContact() {
                   onChange={(e) => setEvent(e.target.value)}
                   className="pl-10"
                   maxLength={100}
+                  disabled={selectedEventData !== null}
                 />
               </div>
             </div>

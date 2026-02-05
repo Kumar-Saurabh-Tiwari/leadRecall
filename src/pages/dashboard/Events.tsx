@@ -132,6 +132,21 @@ export default function Events() {
                 {/* Accent bar */}
                 <div className={`h-1 ${event.role === 'exhibitor' ? 'gradient-primary' : 'bg-secondary'}`} />
                 
+                {/* Event Image */}
+                {event.image && (
+                  <div className="w-full h-48 overflow-hidden bg-muted">
+                    <img 
+                      src={event.image} 
+                      alt={event.name}
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop&q=80&blend=https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop&blend-mode=lighten';
+                        e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23e5e7eb' width='400' height='300'/%3E%3Ctext x='50%' y='50%' font-size='16' fill='%236b7280' text-anchor='middle' dy='.3em' font-family='sans-serif'%3EEvent Image Unavailable%3C/text%3E%3C/svg%3E`;
+                      }}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                )}
+                
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <h3 className="font-semibold text-foreground text-lg">

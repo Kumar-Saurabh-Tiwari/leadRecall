@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, SlidersHorizontal, X, List, Grid2X2, CreditCard, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 type SortOption = 'latest' | 'oldest' | 'name-asc' | 'name-desc' | 'company-asc' | 'company-desc';
 type FilterType = 'all' | 'exhibitor' | 'attendee';
+type ViewMode = 'list' | 'grid' | 'card';
 
 const SORT_OPTIONS = {
   'latest': 'Latest',
@@ -38,6 +39,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('latest');
   const [filterType, setFilterType] = useState<FilterType>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user?.role) {
@@ -92,6 +95,16 @@ export default function Home() {
   // Apply sorting
   filteredEntries = applySorting(filteredEntries, sortBy);
 
+  const handleCarouselScroll = (direction: 'left' | 'right') => {
+    if (carouselRef.current) {
+      const scrollAmount = 320; // card width + gap
+      carouselRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen">
       {/* Welcome Section */}
@@ -107,6 +120,48 @@ export default function Home() {
           <p className="text-sm text-muted-foreground">
             Your lead inbox
           </p>
+        </motion.div>
+
+        {/* View Mode Tabs */}
+        <motion.div 
+          className="flex gap-2 mt-4 mb-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+        >
+          <button
+            onClick={() => setViewMode('list')}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+              viewMode === 'list'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
+          >
+            <List className="h-3.5 w-3.5" />
+            List
+          </button>
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+              viewMode === 'grid'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
+          >
+            <Grid2X2 className="h-3.5 w-3.5" />
+            Grid
+          </button>
+          <button
+            onClick={() => setViewMode('card')}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+              viewMode === 'card'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
+          >
+            <CreditCard className="h-3.5 w-3.5" />
+            Card
+          </button>
         </motion.div>
 
         {/* Search Bar */}
@@ -221,7 +276,7 @@ export default function Home() {
       </div>
 
       {/* Entry List */}
-      <div className="p-4 space-y-3">
+      <div className="p-4">
         {filteredEntries.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -234,19 +289,95 @@ export default function Home() {
           </motion.div>
         ) : (
           <div>
-            <motion.p className="text-xs text-muted-foreground px-1 mb-2">
+            <motion.p className="text-xs text-muted-foreground px-1 mb-3">
               {filteredEntries.length} Lead{filteredEntries.length !== 1 ? 's' : ''}
             </motion.p>
-            <AnimatePresence>
-              {filteredEntries.map((entry, index) => (
-                <EntryCard 
-                  key={entry.id} 
-                  entry={entry}
-                  onClick={() => navigate(`/dashboard/entry/${entry.id}`)}
-                  delay={index * 0.05}
-                />
-              ))}
-            </AnimatePresence>
+            
+            {/* List View */}
+            {viewMode === 'list' && (
+              <div className="space-y-3">
+                <AnimatePresence>
+                  {filteredEntries.map((entry, index) => (
+                    <EntryCard 
+                      key={entry.id} 
+                      entry={entry}
+                      onClick={() => navigate(`/dashboard/entry/${entry.id}`)}
+                      delay={index * 0.05}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+            
+            {/* Grid View */}
+            {viewMode === 'grid' && (
+              <div className="grid grid-cols-2 gap-3">
+                <AnimatePresence>
+                  {filteredEntries.map((entry, index) => (
+                    <motion.div
+                      key={entry.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                    >
+                      <div
+                        onClick={() => navigate(`/dashboard/entry/${entry.id}`)}
+                        className="cursor-pointer"
+                      >
+                        <EntryCard 
+                          entry={entry}
+                          onClick={() => navigate(`/dashboard/entry/${entry.id}`)}
+                        />
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+            
+            {/* Card View (Carousel) */}
+            {viewMode === 'card' && (
+              <div className="relative">
+                <div 
+                  ref={carouselRef}
+                  className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
+                  style={{ scrollBehavior: 'smooth' }}
+                >
+                  <AnimatePresence>
+                    {filteredEntries.map((entry, index) => (
+                      <motion.div
+                        key={entry.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        className="flex-shrink-0 w-72"
+                      >
+                        <EntryCard 
+                          entry={entry}
+                          onClick={() => navigate(`/dashboard/entry/${entry.id}`)}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+                
+                {/* Carousel Controls */}
+                <button
+                  onClick={() => handleCarouselScroll('left')}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90 transition-colors shadow-md"
+                  aria-label="Scroll left"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleCarouselScroll('right')}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90 transition-colors shadow-md"
+                  aria-label="Scroll right"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

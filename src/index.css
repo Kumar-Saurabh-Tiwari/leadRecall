@@ -170,4 +170,14 @@ body {
   .glass {
     @apply bg-card/80 backdrop-blur-lg;
   }
+
+  /* Hide scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

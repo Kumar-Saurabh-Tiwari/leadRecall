@@ -1,7 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, QrCode, UserPlus, ScanText, Calendar } from 'lucide-react';
+import { Plus, X, QrCode, UserPlus, ScanText, Calendar, Check } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { eventService } from '@/services/eventService';
+import { Event } from '@/types';
 
 interface AddOption {
   id: string;
@@ -44,15 +55,117 @@ const addOptions: AddOption[] = [
 
 export function AddEntryFAB() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showEventDialog, setShowEventDialog] = useState(false);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleOptionClick = (path: string) => {
     setIsOpen(false);
-    navigate(path);
+    // For add contact, scan QR, and scan OCR options - show event dialog first
+    if (path === '/dashboard/add/manual' || path === '/dashboard/add/scan-qr' || path === '/dashboard/add/scan-ocr') {
+      setSelectedOption(path);
+      fetchEvents();
+      setShowEventDialog(true);
+    } else {
+      navigate(path);
+    }
+  };
+
+  const fetchEvents = () => {
+    const allEvents = eventService.getAll();
+    setEvents(allEvents);
+  };
+
+  const handleEventSelect = (event: Event) => {
+    setSelectedEvent(event);
+    console.log('Selected Event:', {
+      eventId: event.id,
+      eventName: event.name,
+      eventDate: event.date,
+      eventLocation: event.location,
+      eventDescription: event.description,
+    });
+    
+    // Close dialog and navigate with event data
+    setShowEventDialog(false);
+    if (selectedOption) {
+      // Pass event data as state to the next page
+      navigate(selectedOption, { 
+        state: { 
+          selectedEvent: {
+            eventId: event.id,
+            eventName: event.name,
+          }
+        } 
+      });
+    }
   };
 
   return (
     <>
+      {/* Event Selection Dialog */}
+      <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Select Event</DialogTitle>
+            <DialogDescription>
+              Choose an event to associate with your new entry
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[400px] pr-4">
+            <div className="space-y-2">
+              {events.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No events available
+                </div>
+              ) : (
+                events.map((event) => (
+                  <motion.button
+                    key={event.id}
+                    onClick={() => handleEventSelect(event)}
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                      selectedEvent?.id === event.id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-sm">{event.name}</h3>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(event.date).toLocaleDateString()} • {event.location}
+                        </p>
+                      </div>
+                      {selectedEvent?.id === event.id && (
+                        <Check className="h-4 w-4 text-primary ml-2" />
+                      )}
+                    </div>
+                  </motion.button>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+          <div className="flex gap-2 justify-end pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setShowEventDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => selectedEvent && handleEventSelect(selectedEvent)}
+              disabled={!selectedEvent}
+            >
+              Continue
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* FAB Button */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
