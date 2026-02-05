@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, SlidersHorizontal, X, List, Grid2X2, CreditCard, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Search, SlidersHorizontal, X, List, Grid2X2, CreditCard, ChevronRight, ChevronLeft, User, Building2, Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import { AddEntryFAB } from '@/components/dashboard/AddEntryFAB';
 import { entryService } from '@/services/entryService';
 import { Entry } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
 
 type SortOption = 'latest' | 'oldest' | 'name-asc' | 'name-desc' | 'company-asc' | 'company-desc';
 type FilterType = 'all' | 'exhibitor' | 'attendee';
@@ -311,7 +312,7 @@ export default function Home() {
             
             {/* Grid View */}
             {viewMode === 'grid' && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                 <AnimatePresence>
                   {filteredEntries.map((entry, index) => (
                     <motion.div
@@ -322,12 +323,60 @@ export default function Home() {
                     >
                       <div
                         onClick={() => navigate(`/dashboard/entry/${entry.id}`)}
-                        className="cursor-pointer"
+                        className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col border border-gray-200 dark:border-slate-700 hover:border-primary/30"
                       >
-                        <EntryCard 
-                          entry={entry}
-                          onClick={() => navigate(`/dashboard/entry/${entry.id}`)}
-                        />
+                        {/* Image Section */}
+                        <div className="relative w-full h-48 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center overflow-hidden group">
+                          {entry.image ? (
+                            <img 
+                              src={entry.image} 
+                              alt={entry.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <User className="h-16 w-16 text-gray-300 dark:text-slate-600" />
+                          )}
+                        </div>
+
+                        {/* Content Section */}
+                        <div className="flex-1 p-5 flex flex-col">
+                          {/* Name and Contact Button */}
+                          <div className="flex items-start justify-between gap-2 mb-4">
+                            <h3 className="font-bold text-foreground text-base leading-tight flex-1">
+                              {entry.name}
+                            </h3>
+                            {/* <Badge 
+                              variant="outline"
+                              className="flex-shrink-0 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800 font-semibold text-xs whitespace-nowrap"
+                            >
+                              💬 Contact
+                            </Badge> */}
+                          </div>
+
+                          {/* Company */}
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+                            <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="truncate">{entry.company}</span>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 mt-auto pt-3">
+                            <div className="flex gap-1.5">
+                              <button className="w-7 h-7 rounded-full border border-gray-300 dark:border-slate-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-gray-600 dark:text-gray-400 text-xs">
+                                in
+                              </button>
+                              <button className="w-7 h-7 rounded-full border border-gray-300 dark:border-slate-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-gray-600 dark:text-gray-400">
+                                ☎
+                              </button>
+                            </div>
+                            <Badge 
+                              variant="outline"
+                              className="ml-auto bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800 font-bold text-xs px-2 py-0.5"
+                            >
+                              🎪 {entry.event}
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
                     </motion.div>
                   ))}
@@ -350,32 +399,107 @@ export default function Home() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="flex-shrink-0 w-72"
+                        className="flex-shrink-0 w-80"
                       >
-                        <EntryCard 
-                          entry={entry}
+                        <div
                           onClick={() => navigate(`/dashboard/entry/${entry.id}`)}
-                        />
+                          className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-md hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer h-full flex flex-col"
+                        >
+                          {/* Image Section - Full Width and Height */}
+                          <div className="w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center overflow-hidden group relative">
+                            {entry.image ? (
+                              <img 
+                                src={entry.image} 
+                                alt={entry.name}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                            ) : (
+                              <User className="h-20 w-20 text-gray-300 dark:text-slate-600" />
+                            )}
+                            {/* Badge with number */}
+                            <div className="absolute top-3 left-3 bg-gray-700 dark:bg-gray-800 text-white rounded-full w-10 h-10 flex items-center justify-center text-lg font-bold">
+                              1
+                            </div>
+                          </div>
+
+                          {/* Content Section */}
+                          <div className="flex-1 p-6 flex flex-col">
+                            {/* Name and Type Badge */}
+                            <div className="flex items-start justify-between gap-2 mb-3">
+                              <h3 className="font-bold text-foreground text-xl leading-tight flex-1">
+                                {entry.name}
+                              </h3>
+                              <Badge 
+                                variant={entry.type === 'exhibitor' ? 'default' : 'secondary'}
+                                className="flex-shrink-0 text-xs font-semibold"
+                              >
+                                {entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee'}
+                              </Badge>
+                            </div>
+
+                            {/* Company */}
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3 font-medium">
+                              <Building2 className="h-4 w-4 flex-shrink-0" />
+                              <span className="truncate">{entry.company}</span>
+                            </div>
+
+                            {/* Notes */}
+                            <p className="text-sm text-muted-foreground line-clamp-3 mb-4 flex-1">
+                              {entry.notes}
+                            </p>
+
+                            {/* Date/Time */}
+                            <div className="flex items-center justify-between text-xs mb-4 pb-4 border-t border-gray-200 dark:border-slate-700 pt-3">
+                              <span className="flex items-center gap-1.5 text-muted-foreground font-medium">
+                                <Calendar className="h-4 w-4" />
+                                {format(entry.createdAt, 'MMM d, yyyy')}
+                              </span>
+                              <span className="text-gray-500 font-semibold">
+                                {format(entry.createdAt, 'hh:mm a')}
+                              </span>
+                            </div>
+
+                            {/* Contact Button and Event */}
+                            <div className="flex items-center justify-between gap-2">
+                              <Badge 
+                                variant="outline"
+                                className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800 font-bold text-sm px-3 py-1"
+                              >
+                                💬 Contact
+                              </Badge>
+                              <Badge 
+                                variant="outline"
+                                className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800 font-bold text-sm"
+                              >
+                                🎪 {entry.event}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
                       </motion.div>
                     ))}
                   </AnimatePresence>
                 </div>
                 
                 {/* Carousel Controls */}
-                <button
-                  onClick={() => handleCarouselScroll('left')}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90 transition-colors shadow-md"
-                  aria-label="Scroll left"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => handleCarouselScroll('right')}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90 transition-colors shadow-md"
-                  aria-label="Scroll right"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+                {filteredEntries.length > 0 && (
+                  <>
+                    <button
+                      onClick={() => handleCarouselScroll('left')}
+                      className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-5 bg-primary text-primary-foreground rounded-full p-2.5 hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl"
+                      aria-label="Scroll left"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleCarouselScroll('right')}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-5 bg-primary text-primary-foreground rounded-full p-2.5 hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl"
+                      aria-label="Scroll right"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
