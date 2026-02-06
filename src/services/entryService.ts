@@ -1,4 +1,5 @@
 import { Entry, UserRole } from '@/types';
+import { environment } from '@/config/environment';
 
 const initialEntries: Entry[] = [
   {
@@ -59,6 +60,8 @@ const initialEntries: Entry[] = [
   },
 ];
 
+const hostUrl = environment.apiUrl;
+
 let entries = [...initialEntries];
 
 export const entryService = {
@@ -102,4 +105,161 @@ export const entryService = {
     const oppositeRole: UserRole = userRole === 'exhibitor' ? 'attendee' : 'exhibitor';
     return this.getAll().filter(e => e.type === oppositeRole);
   },
+
+  getAuthHeaders: () => {
+    const token = localStorage.getItem('authToken');
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+  },
+
+  // backend apis for entries for attendees and exhibitors
+
+  async getExhibitorData(sExhibitorEmail: string): Promise<any> {
+    const response = await fetch(`${hostUrl}/users/exhibitor-data?sExhibitorEmail=${sExhibitorEmail}`, {
+      headers: {
+        'Anonymous': 'true'
+      }
+    });
+    return response.json();
+  },
+
+  async getAttendeeData(sAttendeeEmail: string): Promise<any> {
+    const response = await fetch(`${hostUrl}/users/attendee-data?sAttendeeEmail=${sAttendeeEmail}`, {
+      headers: {
+        'Anonymous': 'true'
+      }
+    });
+    return response.json();
+  },
+
+  async getExhibitorDataByID(id: string): Promise<any> {
+    const response = await fetch(`${hostUrl}/users/exhibitor-data/${id}`, {
+      headers: {
+        'Anonymous': 'true'
+      }
+    });
+    return response.json();
+  },
+
+  async getAttendeeDataByID(id: string): Promise<any> {
+    const response = await fetch(`${hostUrl}/users/attendee-data/${id}`, {
+      headers: {
+        'Anonymous': 'true'
+      }
+    });
+    return response.json();
+  },
+
+  async updateExhibitorDataByID(id: string, updateData: any): Promise<any> {
+    const response = await fetch(`${hostUrl}/users/exhibitor-data/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Anonymous': 'true'
+      },
+      body: JSON.stringify(updateData)
+    });
+    return response.json();
+  },
+
+  async updateAttendeeDataByID(id: string, updateData: any): Promise<any> {
+    const response = await fetch(`${hostUrl}/users/attendee-data/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Anonymous': 'true'
+      },
+      body: JSON.stringify(updateData)
+    });
+    return response.json();
+  },
+
+  // event data
+
+  async getExhibitorEventData(sExhibitorEmail: string, sEventId: string): Promise<any> {
+    const response = await fetch(`${hostUrl}/users/exhibitor-event-data?sExhibitorEmail=${sExhibitorEmail}&sEventId=${sEventId}`, {
+      headers: {
+        'Anonymous': 'true'
+      }
+    });
+    return response.json();
+  },
+
+  async getAttendeeEventData(sAttendeeEmail: string, sEventId: string): Promise<any> {
+    const response = await fetch(`${hostUrl}/users/attendee-event-data?sAttendeeEmail=${sAttendeeEmail}&sEventId=${sEventId}`, {
+      headers: {
+        'Anonymous': 'true'
+      }
+    });
+    return response.json();
+  },
+
+  async addNewExhibitorData(data: any): Promise<any> {
+    const response = await fetch(`${hostUrl}/users/addNewExhibitor`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Anonymous': 'true'
+      },
+      body: JSON.stringify(data)
+    });
+    return response.json();
+  },
+
+  async addNewAttendeeData(data: any): Promise<any> {
+    const response = await fetch(`${hostUrl}/users/addNewAttendee`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Anonymous': 'true'
+      },
+      body: JSON.stringify(data)
+    });
+    return response.json();
+  },
+
+  async deleteExhibitor(entryId: string, sExhibitorEmail: string): Promise<any> {
+    const response = await fetch(`${hostUrl}/users/exhibitor-data/${entryId}?sExhibitorEmail=${sExhibitorEmail}`, {
+      method: 'DELETE',
+      headers: {
+        'Anonymous': 'true'
+      }
+    });
+    return response.json();
+  },
+
+  async deleteAttendee(entryId: string, sAttendeeEmail: string): Promise<any> {
+    const response = await fetch(`${hostUrl}/users/attendee-data/${entryId}?sAttendeeEmail=${sAttendeeEmail}`, {
+      method: 'DELETE',
+      headers: {
+        'Anonymous': 'true'
+      }
+    });
+    return response.json();
+  },
+
+  async registerUserEvent(data: any): Promise<any> {
+    const response = await fetch(`${hostUrl}/users/addNewUser`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Anonymous': 'true'
+      },
+      body: JSON.stringify(data)
+    });
+    return response.json();
+  },
+
+  async addInviteUserEvent(data: any): Promise<any> {
+    const response = await fetch(`${hostUrl}/media/add/user-invite`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders()
+      },
+      body: JSON.stringify(data)
+    });
+    return response.json();
+  }
 };

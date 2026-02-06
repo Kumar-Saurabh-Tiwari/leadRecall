@@ -47,13 +47,24 @@ export default function Login() {
       if (response?.data?.verified === true) {
         const userData = response.data.user;
         
+        // Check if sRegistrationType is available and matches the selected role
+        let actualRole = role;
+        if (userData.sRegistrationType && userData.sRegistrationType !== role) {
+          actualRole = userData.sRegistrationType as UserRole;
+          toast({
+            title: 'Role mismatch',
+            description: `You are registered as ${actualRole}. Switching to ${actualRole} login.`,
+          });
+          setRole(actualRole);
+        }
+        
         // Call loginEmailOnly to update AuthContext state
-        await loginEmailOnly(userData, role);
+        await loginEmailOnly(userData, actualRole);
         
         // Show success message
         toast({
           title: 'Welcome!',
-          description: `You have successfully logged in as ${role}.`,
+          description: `You have successfully logged in as ${actualRole}.`,
         });
         
         // Immediate redirect to dashboard

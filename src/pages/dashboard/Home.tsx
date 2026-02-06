@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, SlidersHorizontal, X, List, Grid2X2, CreditCard, ChevronRight, ChevronLeft, User, Building2, Calendar } from 'lucide-react';
+import { Search, SlidersHorizontal, X, List, Grid2X2, CreditCard, ChevronRight, ChevronLeft, User, Building2, Calendar, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import { AddEntryFAB } from '@/components/dashboard/AddEntryFAB';
 import { entryService } from '@/services/entryService';
 import { Entry } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEvents } from '@/contexts/EventContext';
 import { format } from 'date-fns';
 
 type SortOption = 'latest' | 'oldest' | 'name-asc' | 'name-desc' | 'company-asc' | 'company-desc';
@@ -36,27 +37,96 @@ const SORT_OPTIONS = {
 export default function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [entries, setEntries] = useState<Entry[]>([]);
+  const { entries: cachedEntries, setEntries: setEntriesInContext, addEntry: addEntryToContext, isEntriesInitialized, setIsEntriesInitialized } = useEvents();
+  const [entries, setEntries] = useState<Entry[]>(cachedEntries);
+  const [isLoading, setIsLoading] = useState(!isEntriesInitialized);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('latest');
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (user?.role) {
-      setEntries(entryService.getByRole(user.role));
+  const fetchEntries = async () => {
+    if (!user?.role || !user?.email) {
+      setIsLoading(false);
+      return;
     }
-    
-    // Re-fetch entries when returning to this page (simple polling for demo)
-    const interval = setInterval(() => {
-      if (user?.role) {
-        setEntries(entryService.getByRole(user.role));
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      let apiResponse;
+      if (user.role === 'exhibitor') {
+        // Exhibitors get attendee data
+        apiResponse = await entryService.getExhibitorData(user.email);
+      } else {
+        // Attendees get exhibitor data
+        apiResponse = await entryService.getAttendeeData(user.email);
       }
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, [user?.role]);
+
+      console.log('API Response:', apiResponse);
+
+      // Transform API response to Entry format
+      const dataArray = apiResponse?.data || apiResponse;
+      if (dataArray && Array.isArray(dataArray)) {
+        const transformedEntries: Entry[] = dataArray.map((item: any) => {
+          // Get first non-empty event title
+          const validEvent = item.oContactData?.sEventTitles?.find((evt: any) => evt.sTitle && evt.sTitle.trim());
+          
+          // Get first non-N/A LinkedIn profile link
+          const linkedinProfile = item.oContactData?.profiles?.find((prof: any) => prof.sProfileLink && prof.sProfileLink !== 'N/A');
+          
+          return {
+            id: item._id || item.id || crypto.randomUUID(),
+            name: item.oContactData ? 
+              `${item.oContactData.sFirstName || ''} ${item.oContactData.sLastName || ''}`.trim() : 
+              'Unknown',
+            company: item.oContactData?.sCompany || 'Unknown Company',
+            event: validEvent?.sTitle || 'Unknown Event',
+            notes: item.oContactData?.sEntryNotes?.[0] || '',
+            type: user.role === 'exhibitor' ? 'attendee' : 'exhibitor',
+            createdAt: item.dCreatedDate ? new Date(item.dCreatedDate) : new Date(),
+            email: item.oContactData?.sEmail?.[0]?.Email || undefined,
+            phone: item.oContactData?.contacts?.[0]?.sContactNumber || undefined,
+            linkedin: linkedinProfile?.sProfileLink || undefined,
+            profileUrl: undefined,
+            image: item?.sMediaUrl
+          };
+        });
+
+        setEntries(transformedEntries);
+        setEntriesInContext(transformedEntries);
+        setIsEntriesInitialized(true);
+      } else {
+        setEntries([]);
+        setEntriesInContext([]);
+        setIsEntriesInitialized(true);
+      }
+    } catch (err) {
+      console.error('Error fetching entries:', err);
+      setError('Failed to load entries. Please try again.');
+      setEntries([]);
+      setIsEntriesInitialized(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Only fetch if entries haven't been initialized yet
+    if (!isEntriesInitialized) {
+      fetchEntries();
+    }
+  }, [isEntriesInitialized, user?.role, user?.email]);
+
+  // Sync cached entries when they change in context
+  useEffect(() => {
+    if (cachedEntries.length > 0) {
+      setEntries(cachedEntries);
+    }
+  }, [cachedEntries]);
 
   const applySorting = (entriesToSort: Entry[], sortOption: SortOption) => {
     const sorted = [...entriesToSort];
@@ -106,6 +176,12 @@ export default function Home() {
     }
   };
 
+  // Handle when a new entry is added - reset cache and refetch
+  const handleEntryAdded = async () => {
+    setIsEntriesInitialized(false);
+    await fetchEntries();
+  };
+
   return (
     <div className="min-h-screen">
       {/* Welcome Section */}
@@ -114,13 +190,25 @@ export default function Home() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
+          className="flex items-center justify-between"
         >
-          <h1 className="text-2xl font-bold text-foreground mb-1">
-            Welcome {user?.role === 'exhibitor' ? 'Exhibitor' : 'Attendee'} {user?.name || 'there'}!
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Your lead inbox
-          </p>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground mb-1">
+              Welcome {user?.role === 'exhibitor' ? 'Exhibitor' : 'Attendee'} {user?.name || 'there'}!
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Your lead inbox
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchEntries}
+            disabled={isLoading}
+            className="shrink-0"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
         </motion.div>
 
         {/* View Mode Tabs */}
@@ -278,7 +366,33 @@ export default function Home() {
 
       {/* Entry List */}
       <div className="p-4">
-        {filteredEntries.length === 0 ? (
+        {isLoading ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            <div className="inline-flex items-center gap-2 text-muted-foreground">
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              Loading leads...
+            </div>
+          </motion.div>
+        ) : error ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            <p className="text-destructive mb-2">{error}</p>
+            <Button
+              variant="outline"
+              onClick={fetchEntries}
+              size="sm"
+            >
+              Try Again
+            </Button>
+          </motion.div>
+        ) : filteredEntries.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -507,7 +621,7 @@ export default function Home() {
       </div>
 
       {/* FAB */}
-      <AddEntryFAB />
+      <AddEntryFAB onEntryAdded={handleEntryAdded} />
     </div>
   );
 }

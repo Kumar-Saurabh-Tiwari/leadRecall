@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { eventService } from '@/services/eventService';
+import { useEvents } from '../../../contexts/EventContext';
 import type { UserRole } from '@/types';
 
 export default function AddEvent() {
@@ -20,7 +21,7 @@ export default function AddEvent() {
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
-
+  const { fetchEvents } = useEvents();
   const [formData, setFormData] = useState({
     eventTitle: '',
     venueName: '',
@@ -193,6 +194,8 @@ export default function AddEvent() {
         description: 'Event created successfully',
       });
 
+      // Refresh events in context to show the new event in the list
+      await fetchEvents();
       navigate('/dashboard/events');
     } catch (error) {
       console.error('Event creation error:', error);

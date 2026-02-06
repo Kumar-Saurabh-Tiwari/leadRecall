@@ -26,35 +26,35 @@ interface AddOption {
 const addOptions: AddOption[] = [
   {
     id: 'scan-qr',
-    label: 'Scan QR',
+    label: 'Scan QR For Contact',
     description: 'Scan QR code to add contact',
     icon: QrCode,
     path: '/dashboard/add/scan-qr',
   },
   {
     id: 'add-manual',
-    label: 'Add Contact',
+    label: 'Add Contact Manually',
     description: 'Add contact manually',
     icon: UserPlus,
     path: '/dashboard/add/manual',
   },
   {
     id: 'scan-ocr',
-    label: 'Scan OCR',
+    label: 'Scan OCR For Contact',
     description: 'Scan business card',
     icon: ScanText,
     path: '/dashboard/add/scan-ocr',
   },
   {
     id: 'add-event',
-    label: 'Add Event',
+    label: 'Add New Event',
     description: 'Create a new event',
     icon: Calendar,
     path: '/dashboard/add/event',
   },
 ];
 
-export function AddEntryFAB() {
+export function AddEntryFAB({ onEntryAdded }: { onEntryAdded?: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);

@@ -24,7 +24,9 @@ import { Separator } from '@/components/ui/separator';
 import { entryService } from '@/services/entryService';
 import { Entry } from '@/types';
 import { format } from 'date-fns';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useEvents } from '@/contexts/EventContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,25 +40,112 @@ import {
 export default function EntryDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { setEntries: setEntriesInContext, entries: cachedEntries } = useEvents();
+  const { toast } = useToast();
   const [entry, setEntry] = useState<Entry | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      const foundEntry = entryService.getAll().find(e => e.id === id);
-      if (foundEntry) {
-        setEntry(foundEntry);
-      } else {
-        navigate('/dashboard');
+    const fetchEntryDetail = async () => {
+      if (!id || !user?.role || !user?.email) {
+        setIsLoading(false);
+        return;
       }
-    }
-  }, [id, navigate]);
 
-  const handleDelete = () => {
-    if (entry) {
-      entryService.delete(entry.id);
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        let apiResponse: any;
+        
+        // Fetch based on user role
+        if (user.role === 'exhibitor') {
+          // Exhibitors see attendee details
+          apiResponse = await entryService.getExhibitorDataByID (id);
+        } else {
+          // Attendees see exhibitor details
+          apiResponse = await entryService.getAttendeeDataByID(id);
+        }
+
+        console.log('Entry Detail API Response:', apiResponse);
+
+        // Check if response has data
+        const itemData = apiResponse?.data || apiResponse;
+        if (itemData && itemData._id) {
+          // Get first non-empty event title
+          const validEvent = itemData.oContactData?.sEventTitles?.find((evt: any) => evt.sTitle && evt.sTitle.trim());
+          
+          // Get first non-N/A LinkedIn profile link
+          const linkedinProfile = itemData.oContactData?.profiles?.find((prof: any) => prof.sProfileLink && prof.sProfileLink !== 'N/A');
+
+          const transformedEntry: Entry = {
+            id: itemData._id || itemData.id,
+            name: itemData.oContactData ? 
+              `${itemData.oContactData.sFirstName || ''} ${itemData.oContactData.sLastName || ''}`.trim() : 
+              'Unknown',
+            company: itemData.oContactData?.sCompany || 'Unknown Company',
+            event: validEvent?.sTitle || 'Unknown Event',
+            notes: itemData.oContactData?.sEntryNotes?.[0] || '',
+            type: user.role === 'exhibitor' ? 'attendee' : 'exhibitor',
+            createdAt: itemData.dCreatedDate ? new Date(itemData.dCreatedDate) : new Date(),
+            email: itemData.oContactData?.sEmail?.[0]?.Email || undefined,
+            phone: itemData.oContactData?.contacts?.[0]?.sContactNumber || undefined,
+            linkedin: linkedinProfile?.sProfileLink || undefined,
+            profileUrl: undefined,
+            image: itemData.sMediaUrl && itemData.sMediaUrl !== 'No Image' ? itemData.sMediaUrl : undefined
+          };
+
+          setEntry(transformedEntry);
+        } else {
+          setError('Entry not found');
+          navigate('/dashboard');
+        }
+      } catch (err) {
+        console.error('Error fetching entry detail:', err);
+        setError('Failed to load entry details. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEntryDetail();
+  }, [id, user?.role, user?.email, navigate]);
+
+  const handleDelete = async () => {
+    if (!entry || !user?.email) return;
+
+    try {
+      let response;
+      if (user.role === 'exhibitor') {
+        // Delete attendee data
+        response = await entryService.deleteExhibitor(entry.id, user.email);
+      } else {
+        // Delete exhibitor data
+        response = await entryService.deleteAttendee(entry.id, user.email);
+      }
+
+      
+      // Update cached entries by removing the deleted entry
+      const updatedEntries = cachedEntries.filter(e => e.id !== entry.id);
+      setEntriesInContext(updatedEntries);
+      
+      console.log('Delete response:', response);
+      toast({
+        title: 'Success',
+        description: 'Entry deleted successfully',
+      });
       navigate('/dashboard');
+    } catch (err) {
+      console.error('Error deleting entry:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete entry',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -74,10 +163,45 @@ export default function EntryDetail() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-muted-foreground">Loading entry details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-3">{error}</p>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/dashboard')}
+          >
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!entry) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+        <div className="text-center">
+          <p className="text-muted-foreground mb-3">Entry not found</p>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/dashboard')}
+          >
+            Back to Dashboard
+          </Button>
+        </div>
       </div>
     );
   }

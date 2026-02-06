@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { CalendarDays, Bell, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
+import { CalendarDays, Bell, ChevronLeft, ChevronRight, Plus, X, Image } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { calendarService } from '@/services/calendarService';
 import { eventService } from '@/services/eventService';
 import { CalendarItem, Event } from '@/types';
-import { format, isToday, isTomorrow, isThisWeek, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
+import { format, isToday, isTomorrow, isThisWeek, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, isAfter } from 'date-fns';
 
 export default function CalendarPage() {
   const navigate = useNavigate();
@@ -517,6 +517,44 @@ export default function CalendarPage() {
             </Button>
           </motion.div>
         )}
+
+        {/* Upcoming Events */}
+        {(() => {
+          const upcomingEvents = items
+            .filter(item => item.type === 'event' && (isAfter(item.date, new Date()) || isSameDay(item.date, new Date())))
+            .sort((a, b) => a.date.getTime() - b.date.getTime())
+            .slice(0, 5);
+          return upcomingEvents.length > 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+              className="mt-4"
+            >
+              <h3 className="text-sm font-semibold text-foreground mb-2">Upcoming Calendar Events</h3>
+              <div className="space-y-2">
+                {upcomingEvents.map((event, idx) => (
+                  <Card key={event.id} className="border-border/40 bg-gradient-to-r from-orange-100 to-pink-100">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          <CalendarDays className="h-4 w-4 text-primary" />
+                          {/* <Image className="h-4 w-4 text-muted-foreground" /> */}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{event.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(event.date, 'MMM d, yyyy h:mm a')}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </motion.div>
+          ) : null;
+        })()}
       </div>
 
       {/* Add Task Dialog */}

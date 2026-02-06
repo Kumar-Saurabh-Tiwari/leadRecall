@@ -1,18 +1,36 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ScanText, Camera, Upload, Loader2, ImageIcon, X } from 'lucide-react';
+import { ArrowLeft, ScanText, Camera, Upload, Loader2, ImageIcon, X, RotateCcw, ArrowRight, Mail, Phone, Building2, MapPin, Globe, Briefcase, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { ocrService } from '@/services/ocrService';
+
+interface ExtractedContact {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  website?: string;
+  job_title?: string;
+  company?: string;
+}
 
 export default function ScanOCR() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [imageReady, setImageReady] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [extractedData, setExtractedData] = useState<ExtractedContact | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<{ eventId: string; eventName: string } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -20,6 +38,14 @@ export default function ScanOCR() {
 
   // Determine what type of contact the user can add based on their role
   const targetType = user?.role === 'exhibitor' ? 'Attendee' : 'Exhibitor';
+
+  // Capture selected event from navigation state
+  useEffect(() => {
+    const state = location.state as { selectedEvent?: { eventId: string; eventName: string } } | null;
+    if (state?.selectedEvent) {
+      setSelectedEvent(state.selectedEvent);
+    }
+  }, [location.state]);
 
   // Initialize camera stream
   const initializeCamera = async () => {
@@ -32,16 +58,18 @@ export default function ScanOCR() {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
+        // Ensure video plays
+        videoRef.current.play().catch(e => console.error('Play error:', e));
         setCameraActive(true);
       }
     } catch (error) {
       console.error('Camera error:', error);
+      setCameraActive(false);
       toast({
         title: 'Camera Error',
         description: 'Failed to access camera. Please check permissions.',
         variant: 'destructive',
       });
-      setIsProcessing(false);
     }
   };
 
@@ -57,8 +85,6 @@ export default function ScanOCR() {
     if (!videoRef.current || !canvasRef.current) return;
 
     try {
-      setIsProcessing(true);
-      
       const context = canvasRef.current.getContext('2d');
       if (!context) return;
 
@@ -66,92 +92,61 @@ export default function ScanOCR() {
       canvasRef.current.height = videoRef.current.videoHeight;
       context.drawImage(videoRef.current, 0, 0);
 
-      // Convert canvas to blob and process with OCR
-      canvasRef.current.toBlob(async (blob) => {
-        if (!blob) return;
+      // Get preview image first
+      const previewDataUrl = canvasRef.current.toDataURL('image/jpeg', 0.95);
+      setPreviewImage(previewDataUrl);
+      
+      // Stop camera and show preview with Scan/Retry buttons
+      stopCamera();
+      setImageReady(true);
 
-        // Simulate OCR processing with actual canvas analysis
-        const imageData = context.getImageData(0, 0, canvasRef.current!.width, canvasRef.current!.height);
-        const ocrResult = performOCRAnalysis(imageData);
-
-        console.log('OCR Result:', ocrResult);
-        console.log('Image data:', {
-          width: canvasRef.current!.width,
-          height: canvasRef.current!.height,
-          timestamp: new Date().toISOString(),
-        });
-
-        stopCamera();
-        
-        toast({
-          title: 'Card Scanned Successfully',
-          description: `Detected contact information: ${ocrResult}`,
-        });
-
-        setIsProcessing(false);
-      }, 'image/jpeg', 0.95);
+      console.log('Photo captured, preview ready');
     } catch (error) {
-      console.error('OCR processing error:', error);
-      setIsProcessing(false);
+      console.error('Capture error:', error);
       toast({
-        title: 'Processing Error',
-        description: 'Failed to process the image.',
+        title: 'Capture Error',
+        description: 'Failed to capture the photo.',
         variant: 'destructive',
       });
     }
   };
 
-  // Basic OCR analysis (looks for text patterns in image)
-  const performOCRAnalysis = (imageData: ImageData): string => {
-    const data = imageData.data;
-    const width = imageData.width;
-    const height = imageData.height;
+  // OCR processing using the service
+  const performOCRProcessing = async (blob: Blob): Promise<ExtractedContact | null> => {
+    try {
+      const formData = new FormData();
+      formData.append('image', blob);
 
-    // Count text-like features (high contrast areas)
-    let textPixels = 0;
-    let horizontalLines = 0;
-    let verticalLines = 0;
-
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      const gray = (r + g + b) / 3;
-
-      // Text typically has high contrast
-      if (gray < 100 || gray > 200) {
-        textPixels++;
+      const result = await ocrService.detectLabels(formData);
+      
+      console.log('OCR Service Result:', result);
+      
+      // Parse the result - assuming the API returns structured data
+      let contactData: ExtractedContact | null = null;
+      
+      if (result && typeof result === 'object') {
+        contactData = {
+          name: result.name || '',
+          email: result.email || '',
+          phone: result.phone || '',
+          address: result.address || '',
+          website: result.website || '',
+          job_title: result.job_title || '',
+          company: result.company || ''
+        };
       }
+      
+      console.log('Extracted Contact Data:', contactData);
+      
+      return contactData;
+    } catch (error) {
+      console.error('OCR Service Error:', error);
+      return null;
     }
-
-    // Scan for line patterns
-    for (let y = 0; y < height; y += 5) {
-      let lineDarkPixels = 0;
-      for (let x = 0; x < width; x++) {
-        const idx = (y * width + x) * 4;
-        const gray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
-        if (gray < 100) lineDarkPixels++;
-      }
-      if (lineDarkPixels > width * 0.1) horizontalLines++;
-    }
-
-    const textRatio = textPixels / (width * height);
-    
-    // Simulate OCR detection
-    const mockContactInfo = {
-      name: 'John Doe',
-      company: 'Tech Corp',
-      email: 'john@techcorp.com',
-      phone: '+1 (555) 123-4567',
-      confidence: Math.round(textRatio * 100),
-    };
-
-    console.log('Detected contact info:', mockContactInfo);
-    return `${mockContactInfo.name} from ${mockContactInfo.company}`;
   };
 
   const handleTakePhoto = async () => {
-    setIsProcessing(true);
+    setCameraActive(true);
     await initializeCamera();
   };
 
@@ -167,49 +162,222 @@ export default function ScanOCR() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    try {
-      setIsProcessing(true);
+    // Stop camera if it's active
+    stopCamera();
 
+    try {
       const reader = new FileReader();
       reader.onload = (e) => {
+        const base64Data = e.target?.result as string;
+        
+        console.log('Image uploaded - Base64 Data:', base64Data);
+        console.log('Image file details:', {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          timestamp: new Date().toISOString(),
+        });
+
         const img = new Image();
-        img.onload = async () => {
-          if (!canvasRef.current) return;
+        img.onload = () => {
+          console.log('Image element loaded successfully', {
+            width: img.width,
+            height: img.height,
+          });
 
-          const context = canvasRef.current.getContext('2d');
-          if (!context) return;
+          // Set preview directly from base64 (no canvas needed for upload)
+          setPreviewImage(base64Data);
+          setUploadedFile(file);
+          setImageReady(true);
 
-          canvasRef.current.width = img.width;
-          canvasRef.current.height = img.height;
-          context.drawImage(img, 0, 0);
-
-          const imageData = context.getImageData(0, 0, img.width, img.height);
-          const ocrResult = performOCRAnalysis(imageData);
-
-          console.log('Uploaded image OCR result:', ocrResult);
-          console.log('File info:', {
+          console.log('Image preview ready:', {
             name: file.name,
             size: file.size,
             type: file.type,
+            imageWidth: img.width,
+            imageHeight: img.height,
+            imageReady: true,
             timestamp: new Date().toISOString(),
           });
-
-          toast({
-            title: 'Image Processed Successfully',
-            description: `Detected: ${ocrResult}`,
-          });
-
-          setIsProcessing(false);
         };
-        img.src = e.target?.result as string;
+        img.onerror = (error) => {
+          console.error('Image failed to load:', error);
+          toast({
+            title: 'Image Error',
+            description: 'Failed to load the selected image.',
+            variant: 'destructive',
+          });
+        };
+        img.onabort = () => {
+          console.error('Image load aborted');
+        };
+        
+        console.log('Setting image source...');
+        img.src = base64Data;
+      };
+      reader.onerror = () => {
+        console.error('FileReader error');
+        toast({
+          title: 'File Error',
+          description: 'Failed to read the file.',
+          variant: 'destructive',
+        });
       };
       reader.readAsDataURL(file);
     } catch (error) {
       console.error('File processing error:', error);
-      setIsProcessing(false);
       toast({
         title: 'Processing Error',
         description: 'Failed to process the uploaded image.',
+        variant: 'destructive',
+      });
+    }
+    
+    // Reset file input
+    event.target.value = '';
+  };
+
+  const handleScanImage = async () => {
+    try {
+      setIsProcessing(true);
+
+      // If uploaded file exists, use it directly (File extends Blob)
+      if (uploadedFile) {
+        const ocrResult = await performOCRProcessing(uploadedFile);
+
+        console.log('Image OCR result:', ocrResult);
+        console.log('Image info:', {
+          source: 'uploaded',
+          fileName: uploadedFile.name,
+          fileSize: uploadedFile.size,
+          fileType: uploadedFile.type,
+          timestamp: new Date().toISOString(),
+        });
+
+        if (ocrResult) {
+          setExtractedData(ocrResult);
+          toast({
+            title: 'Image Processed Successfully',
+            description: 'Contact information extracted',
+          });
+        } else {
+          toast({
+            title: 'Processing Failed',
+            description: 'Could not extract contact information',
+            variant: 'destructive',
+          });
+        }
+
+        setIsProcessing(false);
+      } 
+      // Otherwise use canvas for captured photo
+      else if (canvasRef.current) {
+        canvasRef.current.toBlob(async (blob) => {
+          if (!blob) {
+            setIsProcessing(false);
+            return;
+          }
+
+          const ocrResult = await performOCRProcessing(blob);
+
+          console.log('Image OCR result:', ocrResult);
+          console.log('Image info:', {
+            source: 'captured',
+            timestamp: new Date().toISOString(),
+          });
+
+          if (ocrResult) {
+            setExtractedData(ocrResult);
+            toast({
+              title: 'Image Processed Successfully',
+              description: 'Contact information extracted',
+            });
+          } else {
+            toast({
+              title: 'Processing Failed',
+              description: 'Could not extract contact information',
+              variant: 'destructive',
+            });
+          }
+
+          setIsProcessing(false);
+        }, 'image/jpeg', 0.95);
+      } else {
+        console.error('No image source available');
+        setIsProcessing(false);
+        toast({
+          title: 'Error',
+          description: 'No image to process',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Scan error:', error);
+      setIsProcessing(false);
+      toast({
+        title: 'Processing Error',
+        description: 'Failed to process the image.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRetry = () => {
+    setPreviewImage(null);
+    setUploadedFile(null);
+    setImageReady(false);
+    setExtractedData(null);
+    setIsProcessing(false);
+  };
+
+  const handleSaveContact = async () => {
+    if (!extractedData) return;
+
+    try {
+      setIsSaving(true);
+
+      let mediaUrl = '';
+
+      // Upload the image if available
+      if (uploadedFile) {
+        mediaUrl = await ocrService.getDirectURL(uploadedFile, 'image');
+      } else if (previewImage && canvasRef.current) {
+        // For captured image, convert canvas to blob
+        const blob = await new Promise<Blob | null>((resolve) => {
+          canvasRef.current!.toBlob((blob) => resolve(blob), 'image/jpeg', 0.95);
+        });
+        if (blob) {
+          const file = new File([blob], 'ocr-captured.jpg', { type: 'image/jpeg' });
+          mediaUrl = await ocrService.getDirectURL(file, 'image');
+        }
+      }
+
+      console.log('Navigating to AddContact with OCR data:', extractedData, 'Media URL:', mediaUrl);
+
+      toast({
+        title: 'Redirecting to Form',
+        description: 'Fill in additional details and save the contact',
+      });
+
+      // Navigate to AddContact page with extracted data
+      setTimeout(() => {
+        navigate('/dashboard/add/manual', {
+          state: {
+            ocrData: extractedData,
+            selectedEvent: selectedEvent,
+            scannedViaOCR: true,
+            mediaUrl: mediaUrl
+          }
+        });
+      }, 500);
+
+      setIsSaving(false);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      setIsSaving(false);
+      toast({
+        title: 'Navigation Failed',
+        description: 'Could not navigate to contact form',
         variant: 'destructive',
       });
     }
@@ -284,6 +452,22 @@ export default function ScanOCR() {
                   />
                 </div>
               </>
+            ) : previewImage ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                {isProcessing ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+                    <div className="text-center space-y-3">
+                      <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto" />
+                      <p className="text-sm text-white font-medium">Processing card...</p>
+                    </div>
+                  </div>
+                ) : null}
+                <img
+                  src={previewImage}
+                  alt="Card preview"
+                  className="w-full h-full object-contain"
+                />
+              </div>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
                 {isProcessing ? (
@@ -303,9 +487,139 @@ export default function ScanOCR() {
             )}
           </div>
 
+          {/* Extracted Contact Data */}
+          {extractedData && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Extracted Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {extractedData.name && (
+                  <div className="flex items-start gap-3">
+                    <User className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Name</p>
+                      <p className="text-sm font-medium">{extractedData.name}</p>
+                    </div>
+                  </div>
+                )}
+                {extractedData.job_title && (
+                  <div className="flex items-start gap-3">
+                    <Briefcase className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Title</p>
+                      <p className="text-sm font-medium">{extractedData.job_title}</p>
+                    </div>
+                  </div>
+                )}
+                {extractedData.company && (
+                  <div className="flex items-start gap-3">
+                    <Building2 className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Company</p>
+                      <p className="text-sm font-medium">{extractedData.company}</p>
+                    </div>
+                  </div>
+                )}
+                {extractedData.email && (
+                  <div className="flex items-start gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Email</p>
+                      <p className="text-sm font-medium break-all">{extractedData.email}</p>
+                    </div>
+                  </div>
+                )}
+                {extractedData.phone && (
+                  <div className="flex items-start gap-3">
+                    <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Phone</p>
+                      <p className="text-sm font-medium">{extractedData.phone}</p>
+                    </div>
+                  </div>
+                )}
+                {extractedData.address && (
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Address</p>
+                      <p className="text-sm font-medium">{extractedData.address}</p>
+                    </div>
+                  </div>
+                )}
+                {extractedData.website && (
+                  <div className="flex items-start gap-3">
+                    <Globe className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Website</p>
+                      <p className="text-sm font-medium break-all">{extractedData.website}</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Actions */}
           <div className="grid grid-cols-2 gap-3">
-            {cameraActive ? (
+            {extractedData ? (
+              <>
+                <Button
+                  onClick={handleSaveContact}
+                  disabled={isSaving}
+                  className="gradient-primary hover:opacity-90"
+                  size="lg"
+                >
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <ArrowRight className="h-4 w-4" />
+                      Continue
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={handleRetry}
+                  disabled={isSaving}
+                  size="lg"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Retry
+                </Button>
+              </>
+            ) : imageReady ? (
+              <>
+                <Button
+                  onClick={handleScanImage}
+                  disabled={isProcessing}
+                  className="gradient-primary hover:opacity-90"
+                  size="lg"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <ScanText className="h-4 w-4" />
+                      Scan
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={handleRetry}
+                  disabled={isProcessing}
+                  size="lg"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Retry
+                </Button>
+              </>
+            ) : cameraActive ? (
               <>
                 <Button
                   onClick={handleCapture}
@@ -369,6 +683,7 @@ export default function ScanOCR() {
             accept="image/*"
             onChange={handleFileSelect}
             className="hidden"
+            capture="environment"
           />
 
           <Button
