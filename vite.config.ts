@@ -22,8 +22,20 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webp}"],
         maximumFileSizeToCacheInBytes: 5000000,
-        navigateFallback: "/offline.html",
         runtimeCaching: [
+          // Cache HTML with StaleWhileRevalidate for offline support
+          {
+            urlPattern: /\.html$/,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "html-cache",
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 86400, // 24 hours
+              },
+            },
+          },
+          // Cache API responses with NetworkFirst, fallback to cache
           {
             urlPattern: /^https:\/\/api\..*/i,
             handler: "NetworkFirst",
@@ -35,7 +47,21 @@ export default defineConfig(({ mode }) => ({
               },
             },
           },
+          // Cache images and other assets with CacheFirst
+          {
+            urlPattern: /^https:\/\/.+\.(png|jpg|jpeg|svg|gif|webp|ico)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "image-cache",
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 2592000, // 30 days
+              },
+            },
+          },
         ],
+        skipWaiting: true,
+        clientsClaim: true,
       },
       manifest: {
         name: "lead-Recall",

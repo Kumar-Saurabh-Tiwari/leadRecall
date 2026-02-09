@@ -8,7 +8,7 @@ interface EventContextType {
   events: Event[];
   entries: Entry[];
   isLoading: boolean;
-  fetchEvents: () => Promise<void>;
+  fetchEvents: (forceRefresh?: boolean) => Promise<void>;
   addEvent: (event: Event) => void;
   updateEvents: (events: Event[]) => void;
   isInitialized: boolean;
@@ -40,9 +40,14 @@ export function EventProvider({ children }: { children: ReactNode }) {
     image: apiEvent.sLogo,
   });
 
-  const fetchEvents = useCallback(async () => {
-    // Skip if already loading or already initialized
-    if (isLoading || isInitialized) {
+  const fetchEvents = useCallback(async (forceRefresh: boolean = false) => {
+    // Skip if already loading
+    if (isLoading) {
+      return;
+    }
+
+    // Skip if already initialized unless forceRefresh is true
+    if (isInitialized && !forceRefresh) {
       return;
     }
 

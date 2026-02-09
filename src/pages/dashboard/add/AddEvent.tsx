@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { eventService } from '@/services/eventService';
 import { useEvents } from '../../../contexts/EventContext';
+import { compressImage } from '@/lib/utils';
 import type { UserRole } from '@/types';
 
 export default function AddEvent() {
@@ -148,11 +149,16 @@ export default function AddEvent() {
       // Upload image if provided
       if (imageFile) {
         try {
-          sMediaUrl = await eventService.getDirectURL(imageFile, 'image');
+          toast({
+            title: 'Compressing image...',
+            description: 'Please wait while we compress your image',
+          });
+          const compressedFile = await compressImage(imageFile, 0.75, 1920, 1920);
+          sMediaUrl = await eventService.getDirectURL(compressedFile, 'image');
         } catch (error) {
           toast({
             title: 'Error',
-            description: 'Failed to upload image',
+            description: 'Failed to process image',
             variant: 'destructive',
           });
           setIsLoading(false);
@@ -194,8 +200,16 @@ export default function AddEvent() {
         description: 'Event created successfully',
       });
 
-      // Refresh events in context to show the new event in the list
-      await fetchEvents();
+      // Refresh events in context to show the new event in the list - force refresh to bypass cache
+      try {
+        await fetchEvents(true);
+      } catch (fetchError) {
+        console.error('Error fetching updated events:', fetchError);
+        // Continue to navigate even if fetch fails
+      }
+
+      // Small delay to ensure state updates before navigation
+      await new Promise(resolve => setTimeout(resolve, 500));
       navigate('/dashboard/events');
     } catch (error) {
       console.error('Event creation error:', error);
