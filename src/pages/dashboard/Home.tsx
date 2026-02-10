@@ -184,21 +184,21 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Welcome Section */}
+      {/* Header with Controls */}
       <div className="px-4 pt-6 pb-4">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="flex items-center justify-between"
+          className="flex items-center justify-between mb-4"
         >
-          <div>
-            <h1 className="text-2xl font-bold text-foreground mb-1">
-              Welcome {user?.role === 'exhibitor' ? 'Exhibitor' : 'Attendee'} {user?.name || 'there'}!
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-foreground">
+              Your Leads
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Your lead inbox
-            </p>
+            <Badge variant="secondary" className="text-xs">
+              {filteredEntries.length}
+            </Badge>
           </div>
           <Button
             variant="ghost"
@@ -213,7 +213,7 @@ export default function Home() {
 
         {/* View Mode Tabs */}
         <motion.div 
-          className="flex gap-2 mt-4 mb-4"
+          className="flex gap-2 mb-4"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.05 }}
@@ -255,7 +255,7 @@ export default function Home() {
 
         {/* Search Bar */}
         <motion.div 
-          className="mt-4 relative"
+          className="relative"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
