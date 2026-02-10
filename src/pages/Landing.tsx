@@ -201,7 +201,7 @@ export default function Landing() {
                 <span 
                   className="bg-clip-text text-transparent"
                   style={{ 
-                    backgroundImage: 'linear-gradient(135deg, hsl(243, 75%, 59%) 0%, hsl(280, 70%, 55%) 50%, hsl(292, 70%, 50%) 100%)',
+                    backgroundImage: 'linear-gradient(108.18deg, #EBCB42 0%, #FFEC99 50.7%, #EBCB42 97.5%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                   }}
@@ -211,7 +211,7 @@ export default function Landing() {
                 <motion.span
                   className="absolute -bottom-2 left-0 right-0 h-1 rounded-full"
                   style={{ 
-                    backgroundImage: 'linear-gradient(135deg, hsl(243, 75%, 59%) 0%, hsl(280, 70%, 55%) 50%, hsl(292, 70%, 50%) 100%)' 
+                    backgroundImage: 'linear-gradient(108.18deg, #EBCB42 0%, #FFEC99 50.7%, #EBCB42 97.5%)' 
                   }}
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
@@ -271,10 +271,10 @@ export default function Landing() {
                   whileInView="visible"
                   whileHover="hover"
                   viewport={{ once: true }}
-                  className="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-800/50 w-fit cursor-default"
+                  className="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-800/50 w-fit cursor-default"
                 >
-                  <Briefcase className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">FOR EXHIBITORS</span>
+                  <Briefcase className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">FOR EXHIBITORS</span>
                 </motion.div>
                 
                 <motion.h2 
@@ -314,7 +314,7 @@ export default function Landing() {
                         whileHover={{ scale: 1.2, rotate: 12 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <div className="flex items-center justify-center h-5 w-5 rounded-full bg-blue-600 dark:bg-blue-400">
+                        <div className="flex items-center justify-center h-5 w-5 rounded-full bg-amber-600 dark:bg-amber-400">
                           <Sparkles className="h-3 w-3 text-white" />
                         </div>
                       </motion.div>
@@ -330,7 +330,7 @@ export default function Landing() {
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ duration: 0.2 }}
-                  className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   Get Started as Exhibitor
                   <motion.div
@@ -352,8 +352,8 @@ export default function Landing() {
                 className="order-1 md:order-2"
               >
                 <motion.div 
-                  className="relative h-80 md:h-96 rounded-xl overflow-hidden shadow-2xl bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-950/50 dark:to-blue-900/30 border border-blue-200/30 dark:border-blue-800/30"
-                  whileHover={{ boxShadow: "0 25px 50px rgba(59, 130, 246, 0.2)" }}
+                  className="relative h-80 md:h-96 rounded-xl overflow-hidden shadow-2xl bg-gradient-to-br from-amber-100 to-yellow-50 dark:from-amber-950/50 dark:to-amber-900/30 border border-amber-200/30 dark:border-amber-800/30"
+                  whileHover={{ boxShadow: "0 25px 50px rgba(251, 191, 36, 0.2)" }}
                   transition={{ duration: 0.3 }}
                 >
                   <motion.div 
@@ -362,7 +362,7 @@ export default function Landing() {
                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                   >
                     <div className="text-center space-y-4">
-                      <Briefcase className="h-24 w-24 text-blue-300 dark:text-blue-700 mx-auto opacity-50" />
+                      <Briefcase className="h-24 w-24 text-amber-300 dark:text-amber-700 mx-auto opacity-50" />
                       <p className="text-muted-foreground font-medium">Professional Lead Management</p>
                     </div>
                   </motion.div>
@@ -396,8 +396,8 @@ export default function Landing() {
                 style={{ perspective: 1000 }}
               >
                 <motion.div 
-                  className="relative h-80 md:h-96 rounded-xl overflow-hidden shadow-2xl bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-950/50 dark:to-emerald-900/30 border border-emerald-200/30 dark:border-emerald-800/30"
-                  whileHover={{ boxShadow: "0 25px 50px rgba(16, 185, 129, 0.2)" }}
+                  className="relative h-80 md:h-96 rounded-xl overflow-hidden shadow-2xl bg-gradient-to-br from-yellow-100 to-amber-50 dark:from-yellow-950/50 dark:to-yellow-900/30 border border-yellow-200/30 dark:border-yellow-800/30"
+                  whileHover={{ boxShadow: "0 25px 50px rgba(251, 191, 36, 0.2)" }}
                   transition={{ duration: 0.3 }}
                 >
                   <motion.div 
@@ -406,7 +406,7 @@ export default function Landing() {
                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                   >
                     <div className="text-center space-y-4">
-                      <Users className="h-24 w-24 text-emerald-300 dark:text-emerald-700 mx-auto opacity-50" />
+                      <Users className="h-24 w-24 text-yellow-300 dark:text-yellow-700 mx-auto opacity-50" />
                       <p className="text-muted-foreground font-medium">Smart Networking</p>
                     </div>
                   </motion.div>
@@ -420,10 +420,10 @@ export default function Landing() {
                   whileInView="visible"
                   whileHover="hover"
                   viewport={{ once: true }}
-                  className="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/50 w-fit cursor-default"
+                  className="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-yellow-50/80 dark:bg-yellow-950/30 border border-yellow-200/50 dark:border-yellow-800/50 w-fit cursor-default"
                 >
-                  <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">FOR ATTENDEES</span>
+                  <Users className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                  <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">FOR ATTENDEES</span>
                 </motion.div>
                 
                 <motion.h2 
@@ -463,7 +463,7 @@ export default function Landing() {
                         whileHover={{ scale: 1.2, rotate: 12 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <div className="flex items-center justify-center h-5 w-5 rounded-full bg-emerald-600 dark:bg-emerald-400">
+                        <div className="flex items-center justify-center h-5 w-5 rounded-full bg-yellow-600 dark:bg-yellow-400">
                           <Sparkles className="h-3 w-3 text-white" />
                         </div>
                       </motion.div>
@@ -479,7 +479,7 @@ export default function Landing() {
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ duration: 0.2 }}
-                  className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   Join as Attendee
                   <motion.div

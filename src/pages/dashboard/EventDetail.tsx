@@ -252,7 +252,7 @@ export default function EventDetail() {
                     variant={event.role === 'exhibitor' ? 'default' : 'secondary'}
                     className={`mb-2 ${event.role === 'exhibitor' 
                       ? 'gradient-primary text-primary-foreground border-0' 
-                      : 'bg-white/90 text-gray-900 border-0'
+                      : 'bg-amber-50/90 text-gray-900 border-0'
                     }`}
                   >
                     {event.role === 'exhibitor' ? (

@@ -534,7 +534,7 @@ export default function CalendarPage() {
               <h3 className="text-sm font-semibold text-foreground mb-2">Upcoming Calendar Events</h3>
               <div className="space-y-2">
                 {upcomingEvents.map((event, idx) => (
-                  <Card key={event.id} className="border-border/40 bg-gradient-to-r from-orange-100 to-pink-100">
+                  <Card key={event.id} className="border-border/40 bg-gradient-to-r from-amber-100 to-yellow-100">
                     <CardContent className="p-3">
                       <div className="flex items-center gap-2">
                         <div className="flex gap-1">

@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Building2, LogOut, Edit, ChevronRight, Shield, Bell, HelpCircle, Calendar, MapPin, Award, Loader } from 'lucide-react';
+import { Mail, Building2, LogOut, Edit, ChevronRight, Shield, Bell, HelpCircle, Loader, Linkedin, RefreshCw, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { profileService } from '@/services/profileService';
@@ -18,7 +19,9 @@ export default function Profile() {
   const { toast } = useToast();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isFromCache, setIsFromCache] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -31,6 +34,7 @@ export default function Profile() {
         const response = await profileService.getLeadUserProfileByEmail(user.email);
         setProfileData(response.data);
         setError(null);
+        setIsFromCache(false);
       } catch (err) {
         console.error('Error fetching profile:', err);
         setError('Failed to load profile data');
@@ -46,6 +50,33 @@ export default function Profile() {
 
     fetchProfile();
   }, [user?.email, toast]);
+
+  const handleRefresh = async () => {
+    if (!user?.email || refreshing) return;
+
+    setRefreshing(true);
+    try {
+      // Clear cache and fetch fresh data
+      await profileService.clearProfileCache(user.email);
+      const response = await profileService.getLeadUserProfileByEmail(user.email);
+      setProfileData(response.data);
+      setError(null);
+      setIsFromCache(false);
+      toast({
+        title: 'Refreshed',
+        description: 'Profile data updated successfully',
+      });
+    } catch (err) {
+      console.error('Error refreshing profile:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh profile data',
+        variant: 'destructive'
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const displayName = profileData?.sUserName || user?.name || 'User';
   const displayEmail = profileData?.sEmail || user?.email || '';
@@ -91,9 +122,23 @@ export default function Profile() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
+          className="flex items-center justify-between"
         >
-          <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your account settings</p>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
+            <p className="text-sm text-muted-foreground mt-1">Manage your account settings</p>
+          </div>
+          {!loading && !error && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="h-9 w-9"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          )}
         </motion.div>
       </header>
 
@@ -106,11 +151,10 @@ export default function Profile() {
         )}
 
         {!loading && error && (
-          <Card className="border-destructive/50 bg-destructive/5">
-            <CardContent className="pt-6">
-              <p className="text-destructive text-sm">{error}</p>
-            </CardContent>
-          </Card>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         {!loading && !error && (
@@ -122,22 +166,28 @@ export default function Profile() {
           transition={{ duration: 0.3 }}
         >
           <Card className="shadow-card border-border/50 overflow-hidden">
-            <div className="h-24 gradient-primary relative" />
-            <CardContent className="pt-0 -mt-12 relative z-10">
-              <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-6">
-                <Avatar className="h-24 w-24 border-4 border-card shadow-lg flex-shrink-0">
+            <div className="h-28 gradient-primary relative" />
+            <CardContent className="pt-0 -mt-16 relative z-10">
+              <div className="flex flex-col items-center text-center mb-6">
+                <Avatar className="h-32 w-32 border-4 border-card shadow-xl mb-4 flex-shrink-0">
                   {displayMediaUrl && (
-                    <AvatarImage src={displayMediaUrl} alt={displayName} />
+                    <AvatarImage src={displayMediaUrl} alt={displayName} className="object-cover" />
                   )}
-                  <AvatarFallback className="gradient-primary text-primary-foreground text-2xl font-bold">
+                  <AvatarFallback className="gradient-primary text-primary-foreground text-3xl font-bold">
                     {getInitials(displayName)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
+                <div className="space-y-2">
                   <h2 className="text-2xl font-bold text-foreground">{displayName}</h2>
-                  <p className="text-sm text-muted-foreground mb-2">{displayEmail}</p>
+                  <p className="text-sm text-muted-foreground">{displayEmail}</p>
+                  {displayCompany && (
+                    <div className="flex items-center justify-center gap-2 text-base text-foreground font-medium">
+                      <Building2 className="h-4 w-4 text-primary" />
+                      {displayCompany}
+                    </div>
+                  )}
                   <Badge 
-                    className="w-fit text-xs py-1"
+                    className="w-fit text-sm py-1.5 px-4 mt-3"
                     variant={displayRole === 'exhibitor' ? 'default' : 'secondary'}
                   >
                     {displayRole === 'exhibitor' ? '🎯 Exhibitor' : '👤 Attendee'}
@@ -145,34 +195,49 @@ export default function Profile() {
                 </div>
               </div>
 
-              <Separator className="my-4" />
+              <Separator className="my-6" />
 
-              {/* Contact Information */}
+              {/* Contact Information Grid */}
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground">Contact Information</h3>
-                <div className="grid gap-3">
-                  <div className="flex items-start gap-3 text-sm">
-                    <Mail className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <h3 className="text-sm font-semibold text-foreground mb-4">Contact Information</h3>
+                <div className="grid gap-4">
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                    <div className="flex-shrink-0 p-2 rounded-md bg-primary/10">
+                      <Mail className="h-4 w-4 text-primary" />
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground">Email</p>
-                      <p className="text-foreground break-all">{displayEmail}</p>
+                      <p className="text-xs text-muted-foreground font-medium">Email Address</p>
+                      <p className="text-sm text-foreground break-all mt-0.5">{displayEmail}</p>
                     </div>
                   </div>
-                  {displayCompany && (
-                    <div className="flex items-start gap-3 text-sm">
-                      <Building2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                  
+                  {displayPhone && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="flex-shrink-0 p-2 rounded-md bg-primary/10">
+                        <Mail className="h-4 w-4 text-primary" />
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground">Company</p>
-                        <p className="text-foreground">{displayCompany}</p>
+                        <p className="text-xs text-muted-foreground font-medium">Phone Number</p>
+                        <p className="text-sm text-foreground mt-0.5">{displayPhone}</p>
                       </div>
                     </div>
                   )}
-                  {displayPhone && (
-                    <div className="flex items-start gap-3 text-sm">
-                      <Mail className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+
+                  {displayLinkedinUrl && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="flex-shrink-0 p-2 rounded-md bg-primary/10">
+                        <Linkedin className="h-4 w-4 text-primary" />
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground">Phone</p>
-                        <p className="text-foreground">{displayPhone}</p>
+                        <p className="text-xs text-muted-foreground font-medium">LinkedIn Profile</p>
+                        <a 
+                          href={displayLinkedinUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline mt-0.5 inline-block"
+                        >
+                          View Profile →
+                        </a>
                       </div>
                     </div>
                   )}
@@ -189,28 +254,27 @@ export default function Profile() {
           transition={{ duration: 0.3, delay: 0.05 }}
         >
           <Card className="shadow-card border-border/50">
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle className="text-base">Quick Actions</CardTitle>
+              <CardDescription className="text-xs">Manage your profile settings</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 h-10"
+                  className="flex flex-col items-center gap-2 h-auto py-4 hover:bg-primary/5 hover:border-primary/50 transition-all"
                   onClick={() => toast({ title: 'Coming soon!', description: 'Profile editing will be available soon.' })}
                 >
-                  <Edit className="h-4 w-4" />
-                  <span className="text-xs">Edit Profile</span>
+                  <Edit className="h-5 w-5 text-primary" />
+                  <span className="text-xs font-medium">Edit Profile</span>
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 h-10"
-                  onClick={() => toast({ title: 'Coming soon!', description: 'Profile editing will be available soon.' })}
+                  className="flex flex-col items-center gap-2 h-auto py-4 hover:bg-primary/5 hover:border-primary/50 transition-all"
+                  onClick={() => toast({ title: 'Coming soon!', description: 'Security settings will be available soon.' })}
                 >
-                  <Shield className="h-4 w-4" />
-                  <span className="text-xs">Privacy</span>
+                  <Shield className="h-5 w-5 text-primary" />
+                  <span className="text-xs font-medium">Privacy</span>
                 </Button>
               </div>
             </CardContent>
@@ -224,22 +288,22 @@ export default function Profile() {
           transition={{ duration: 0.3, delay: 0.1 }}
         >
           <Card className="shadow-card border-border/50">
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle className="text-base">Settings & Preferences</CardTitle>
-              <CardDescription>Manage your account settings</CardDescription>
+              <CardDescription className="text-xs">Manage your account settings</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               {menuItems.map((item, index) => (
                 <button
                   key={item.label}
                   onClick={item.action}
-                  className={`w-full flex items-center justify-between px-6 py-4 hover:bg-muted/50 transition-colors ${
+                  className={`w-full flex items-center justify-between px-6 py-3.5 hover:bg-muted/50 transition-colors ${
                     index !== menuItems.length - 1 ? 'border-b border-border/30' : ''
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <item.icon className="h-4 w-4 text-foreground" />
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <item.icon className="h-4 w-4 text-primary" />
                     </div>
                     <span className="text-foreground font-medium text-sm">{item.label}</span>
                   </div>
@@ -251,54 +315,44 @@ export default function Profile() {
         </motion.div>
 
         {/* Account Stats - Optional */}
+        {(displayEventName || displayCheckInStatus || displayBoothNumber) && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.15 }}
         >
           <Card className="shadow-card border-border/50">
-            <CardHeader>
-              <CardTitle className="text-base">Account Information</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Event Information</CardTitle>
+              <CardDescription className="text-xs">Your event details</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {displayEventName && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Event</span>
-                    <span className="text-sm font-medium text-foreground">{displayEventName}</span>
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
+                    <span className="text-sm text-muted-foreground font-medium">Event Name</span>
+                    <span className="text-sm font-semibold text-foreground">{displayEventName}</span>
                   </div>
                 )}
                 {displayCheckInStatus && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Check-in Status</span>
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
+                    <span className="text-sm text-muted-foreground font-medium">Check-in Status</span>
                     <Badge variant={displayCheckInStatus === 'verified' ? 'default' : 'secondary'}>
                       {displayCheckInStatus}
                     </Badge>
                   </div>
                 )}
                 {displayBoothNumber && displayRole === 'exhibitor' && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Booth Number</span>
-                    <span className="text-sm font-medium text-foreground">{displayBoothNumber}</span>
-                  </div>
-                )}
-                {displayLinkedinUrl && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">LinkedIn</span>
-                    <a 
-                      href={displayLinkedinUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm font-medium text-primary hover:underline"
-                    >
-                      View Profile
-                    </a>
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
+                    <span className="text-sm text-muted-foreground font-medium">Booth Number</span>
+                    <span className="text-sm font-semibold text-foreground">#{displayBoothNumber}</span>
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
         </motion.div>
+        )}
           </>
         )}
 
@@ -310,7 +364,8 @@ export default function Profile() {
         >
           <Button
             variant="outline"
-            className="w-full text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive font-medium"
+            size="lg"
+            className="w-full text-destructive border-destructive/30 hover:bg-destructive hover:text-destructive-foreground font-semibold h-12"
             onClick={handleLogout}
           >
             <LogOut className="h-4 w-4 mr-2" />

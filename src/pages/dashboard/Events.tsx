@@ -167,7 +167,7 @@ export default function Events() {
                       {/* Badges on Image */}
                       <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
                         <Badge 
-                          className={`${event.role === 'exhibitor' ? 'gradient-primary' : 'bg-white/90 text-gray-900'} shadow-lg backdrop-blur`}
+                          className={`${event.role === 'exhibitor' ? 'gradient-primary' : 'bg-amber-50/90 text-gray-900'} shadow-lg backdrop-blur`}
                         >
                           {event.role === 'exhibitor' ? (
                             <><Briefcase className="h-3 w-3 mr-1" /> Exhibiting</>

@@ -437,10 +437,10 @@ export default function Home() {
                     >
                       <div
                         onClick={() => navigate(`/dashboard/entry/${entry.id}`)}
-                        className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col border border-gray-200 dark:border-slate-700 hover:border-primary/30"
+                        className="bg-card dark:bg-slate-900 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col border border-gray-200 dark:border-slate-700 hover:border-primary/30"
                       >
                         {/* Image Section */}
-                        <div className="relative w-full h-48 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center overflow-hidden group">
+                        <div className="relative w-full h-48 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center overflow-hidden group">
                           {entry.image ? (
                             <img 
                               src={entry.image} 
@@ -517,10 +517,10 @@ export default function Home() {
                       >
                         <div
                           onClick={() => navigate(`/dashboard/entry/${entry.id}`)}
-                          className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-md hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer h-full flex flex-col"
+                          className="bg-card dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-md hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer h-full flex flex-col"
                         >
                           {/* Image Section - Full Width and Height */}
-                          <div className="w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center overflow-hidden group relative">
+                          <div className="w-full h-64 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center overflow-hidden group relative">
                             {entry.image ? (
                               <img 
                                 src={entry.image} 

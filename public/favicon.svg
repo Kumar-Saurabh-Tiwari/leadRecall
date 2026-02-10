@@ -1,22 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Purple rounded background -->
-  <rect width="64" height="64" rx="14" fill="#a855f7"/>
+  <!-- Gold rounded background -->
+  <rect width="64" height="64" rx="14" fill="#FFD700"/>
   
   <!-- Lightning bolt / Connect symbol -->
   <g transform="translate(32, 32)">
     <!-- Vertical line -->
-    <line x1="0" y1="-12" x2="0" y2="12" stroke="white" stroke-width="3" stroke-linecap="round"/>
+    <line x1="0" y1="-12" x2="0" y2="12" stroke="#6B7280" stroke-width="3" stroke-linecap="round"/>
     
     <!-- Top left diagonal -->
-    <line x1="0" y1="-12" x2="-8" y2="-4" stroke="white" stroke-width="3" stroke-linecap="round"/>
+    <line x1="0" y1="-12" x2="-8" y2="-4" stroke="#6B7280" stroke-width="3" stroke-linecap="round"/>
     
     <!-- Top right diagonal -->
-    <line x1="0" y1="-12" x2="8" y2="-4" stroke="white" stroke-width="3" stroke-linecap="round"/>
+    <line x1="0" y1="-12" x2="8" y2="-4" stroke="#6B7280" stroke-width="3" stroke-linecap="round"/>
     
     <!-- Bottom left diagonal -->
-    <line x1="0" y1="12" x2="-8" y2="4" stroke="white" stroke-width="3" stroke-linecap="round"/>
+    <line x1="0" y1="12" x2="-8" y2="4" stroke="#6B7280" stroke-width="3" stroke-linecap="round"/>
     
     <!-- Bottom right diagonal -->
-    <line x1="0" y1="12" x2="8" y2="4" stroke="white" stroke-width="3" stroke-linecap="round"/>
+    <line x1="0" y1="12" x2="8" y2="4" stroke="#6B7280" stroke-width="3" stroke-linecap="round"/>
   </g>
 </svg>
