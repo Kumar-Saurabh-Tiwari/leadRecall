@@ -158,7 +158,7 @@ export default function Landing() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50"
+        className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-b border-amber-200/30 shadow-lg"
       >
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Logo size="md" showTagline />
@@ -166,9 +166,9 @@ export default function Landing() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
-            className="flex items-center gap-2 text-sm text-muted-foreground"
+            className="flex items-center gap-2 text-sm font-medium text-amber-600"
           >
-            <Sparkles className="h-4 w-4 text-primary" />
+            <Sparkles className="h-4 w-4 text-amber-500" />
             <span className="hidden sm:inline">Smart Networking</span>
           </motion.div>
         </div>
@@ -183,25 +183,25 @@ export default function Landing() {
           animate="visible"
         >
           {/* Hero Text */}
-          <div className="text-center mb-16">
+          <div className="text-center mb-20 space-y-6">
             <motion.div
               variants={itemVariants}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/50 border border-primary/20 mb-6"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/40 border border-amber-300/60 dark:border-amber-600/40 mb-6 shadow-sm"
             >
-              <Zap className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Event Networking Reimagined</span>
+              <Zap className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">Event Networking Reimagined</span>
             </motion.div>
 
             <motion.h1
               variants={itemVariants}
-              className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight tracking-tight"
+              className="text-3xl sm:text-5xl md:text-3xl font-extrabold text-foreground mb-6 leading-tight tracking-tight drop-shadow-md"
             >
               Smart networking for{' '}
               <span className="relative inline-block">
                 <span 
-                  className="bg-clip-text text-transparent"
+                  className="bg-clip-text text-transparent text-3xl md:text-3xl font-semibold"
                   style={{ 
-                    backgroundImage: 'linear-gradient(108.18deg, #EBCB42 0%, #FFEC99 50.7%, #EBCB42 97.5%)',
+                    backgroundImage: 'linear-gradient(90deg, #374151 0%, #6B7280 50%, #9CA3AF 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                   }}
@@ -209,9 +209,9 @@ export default function Landing() {
                   modern events
                 </span>
                 <motion.span
-                  className="absolute -bottom-2 left-0 right-0 h-1 rounded-full"
+                  className="absolute -bottom-2 left-1/6 right-1/6 h-0.5 rounded-full"
                   style={{ 
-                    backgroundImage: 'linear-gradient(108.18deg, #EBCB42 0%, #FFEC99 50.7%, #EBCB42 97.5%)' 
+                    backgroundImage: 'linear-gradient(90deg, #E5E7EB 0%, #D1D5DB 50%, #9CA3AF 100%)'
                   }}
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
@@ -222,16 +222,16 @@ export default function Landing() {
 
             <motion.p
               variants={itemVariants}
-              className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+              className="text-lg md:text-xl text-foreground max-w-2xl mx-auto leading-relaxed font-medium"
             >
               Capture leads, build meaningful connections, and follow up effortlessly.
-              <span className="block mt-2 text-foreground/70">All in one powerful platform.</span>
+              <span className="block mt-2 text-foreground/85">All in one powerful platform.</span>
             </motion.p>
 
             {/* Stats or Trust Indicators */}
             <motion.div
               variants={itemVariants}
-              className="flex flex-wrap justify-center gap-8 mt-10"
+              className="flex flex-wrap justify-center gap-6 md:gap-12 mt-12 px-4"
             >
               {[
                 { value: '10K+', label: 'Leads Captured' },
@@ -240,12 +240,12 @@ export default function Landing() {
               ].map((stat, index) => (
                 <motion.div
                   key={stat.label}
-                  className="text-center"
-                  whileHover={{ scale: 1.05 }}
+                  className="text-center px-6 py-4 rounded-lg bg-gradient-to-br from-amber-50/50 to-yellow-50/50 dark:from-amber-900/20 dark:to-yellow-900/20 border border-amber-200/40 dark:border-amber-700/40 backdrop-blur-sm"
+                  whileHover={{ scale: 1.08, y: -4 }}
                   transition={{ type: 'spring', stiffness: 300 }}
                 >
-                  <div className="text-2xl md:text-3xl font-bold text-primary">{stat.value}</div>
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
+                  <div className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent">{stat.value}</div>
+                  <div className="text-sm font-medium text-foreground/75 mt-1">{stat.label}</div>
                 </motion.div>
               ))}
             </motion.div>
@@ -254,7 +254,7 @@ export default function Landing() {
           {/* Professional Sections Layout */}
           <motion.div
             variants={itemVariants}
-            className="space-y-24 max-w-5xl mx-auto"
+            className="space-y-16 max-w-5xl mx-auto"
           >
             {/* Exhibitors Section */}
             <motion.section
@@ -262,7 +262,7 @@ export default function Landing() {
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
               variants={sectionVariants}
-              className="grid md:grid-cols-2 gap-10 lg:gap-16 items-center py-12"
+              className="grid md:grid-cols-2 gap-10 lg:gap-16 items-center py-6"
             >
               <div className="space-y-6 order-2 md:order-1">
                 <motion.div 
@@ -271,10 +271,10 @@ export default function Landing() {
                   whileInView="visible"
                   whileHover="hover"
                   viewport={{ once: true }}
-                  className="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-800/50 w-fit cursor-default"
+                  className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-100 to-amber-50 dark:from-amber-900/40 dark:to-amber-800/30 border border-amber-300/60 dark:border-amber-700/50 w-fit cursor-default shadow-sm font-bold"
                 >
-                  <Briefcase className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                  <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">FOR EXHIBITORS</span>
+                  <Briefcase className="h-5 w-5 text-amber-700 dark:text-amber-300" />
+                  <span className="text-sm font-bold text-amber-700 dark:text-amber-300">FOR EXHIBITORS</span>
                 </motion.div>
                 
                 <motion.h2 
@@ -282,7 +282,7 @@ export default function Landing() {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
-                  className="text-3xl md:text-4xl font-bold text-foreground leading-tight"
+                  className="text-3xl md:text-5xl font-extrabold text-foreground leading-tight"
                 >
                   Maximize Your Lead Capture at Every Event
                 </motion.h2>
@@ -292,12 +292,12 @@ export default function Landing() {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
-                  className="text-lg text-muted-foreground leading-relaxed"
+                  className="text-lg md:text-xl text-foreground/80 leading-relaxed font-medium"
                 >
                   Transform your booth experience with our intelligent lead capture technology. Effortlessly connect with attendees through QR codes, QR scanning, and real-time data insights. Every interaction is recorded, organized, and ready for follow-up.
                 </motion.p>
 
-                <div className="space-y-4 pt-4">
+                <div className="space-y-4 pt-6">
                   {exhibitorFeatures.map((feature, index) => (
                     <motion.div
                       key={index}
@@ -307,19 +307,19 @@ export default function Landing() {
                       whileHover="hover"
                       viewport={{ once: true }}
                       variants={featureVariants}
-                      className="flex items-start gap-4 cursor-default"
+                      className="flex items-start gap-4 cursor-default p-3 rounded-lg hover:bg-amber-50/50 dark:hover:bg-amber-900/20 transition-colors"
                     >
                       <motion.div 
                         className="flex-shrink-0 mt-1"
-                        whileHover={{ scale: 1.2, rotate: 12 }}
+                        whileHover={{ scale: 1.25, rotate: 12 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <div className="flex items-center justify-center h-5 w-5 rounded-full bg-amber-600 dark:bg-amber-400">
-                          <Sparkles className="h-3 w-3 text-white" />
+                        <div className="flex items-center justify-center h-6 w-6 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 dark:from-amber-400 dark:to-amber-500 shadow-md">
+                          <Sparkles className="h-3.5 w-3.5 text-white" />
                         </div>
                       </motion.div>
                       <div>
-                        <p className="font-semibold text-foreground">{feature}</p>
+                        <p className="font-semibold text-foreground text-base">{feature}</p>
                       </div>
                     </motion.div>
                   ))}
@@ -327,17 +327,17 @@ export default function Landing() {
 
                 <motion.button
                   onClick={() => navigate('/login?role=exhibitor')}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.06, y: -3 }}
+                  whileTap={{ scale: 0.96 }}
                   transition={{ duration: 0.2 }}
-                  className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="mt-8 inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-gray-800 dark:text-gray-100 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-200 dark:from-amber-700 dark:via-amber-600 dark:to-amber-500 hover:from-amber-300 hover:via-amber-200 hover:to-yellow-100 transition-all duration-300 shadow-lg hover:shadow-2xl border border-amber-200/50 dark:border-amber-600/50"
                 >
                   Get Started as Exhibitor
                   <motion.div
-                    whileHover={{ x: 3 }}
+                    whileHover={{ x: 4 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-5 w-5 text-current" />
                   </motion.div>
                 </motion.button>
               </div>
@@ -376,7 +376,7 @@ export default function Landing() {
               whileInView={{ opacity: 1, scaleX: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, ease: "easeOut" }}
-              className="h-px bg-gradient-to-r from-transparent via-border to-transparent"
+              className="h-px bg-gradient-to-r from-transparent via-border to-transparent my-4"
             />
 
             {/* Attendees Section */}
@@ -385,7 +385,7 @@ export default function Landing() {
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
               variants={sectionVariants}
-              className="grid md:grid-cols-2 gap-10 lg:gap-16 items-center py-12"
+              className="grid md:grid-cols-2 gap-10 lg:gap-16 items-center py-6"
             >
               <motion.div
                 initial="hidden"
@@ -420,10 +420,10 @@ export default function Landing() {
                   whileInView="visible"
                   whileHover="hover"
                   viewport={{ once: true }}
-                  className="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-yellow-50/80 dark:bg-yellow-950/30 border border-yellow-200/50 dark:border-yellow-800/50 w-fit cursor-default"
+                  className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gradient-to-r from-yellow-100 to-yellow-50 dark:from-yellow-900/40 dark:to-yellow-800/30 border border-yellow-300/60 dark:border-yellow-700/50 w-fit cursor-default shadow-sm"
                 >
-                  <Users className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                  <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">FOR ATTENDEES</span>
+                  <Users className="h-5 w-5 text-yellow-700 dark:text-yellow-300" />
+                  <span className="text-sm font-bold text-yellow-700 dark:text-yellow-300">FOR ATTENDEES</span>
                 </motion.div>
                 
                 <motion.h2 
@@ -431,7 +431,7 @@ export default function Landing() {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
-                  className="text-3xl md:text-4xl font-bold text-foreground leading-tight"
+                  className="text-3xl md:text-5xl font-extrabold text-foreground leading-tight"
                 >
                   Build Meaningful Professional Connections
                 </motion.h2>
@@ -441,12 +441,12 @@ export default function Landing() {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
-                  className="text-lg text-muted-foreground leading-relaxed"
+                  className="text-lg md:text-xl text-foreground/80 leading-relaxed font-medium"
                 >
                   Navigate events with confidence and purpose. Discover exhibitors aligned with your interests, connect seamlessly, and build a professional network that lasts. Every connection is saved and organized for easy follow-up and future collaboration.
                 </motion.p>
 
-                <div className="space-y-4 pt-4">
+                <div className="space-y-4 pt-6">
                   {attendeeFeatures.map((feature, index) => (
                     <motion.div
                       key={index}
@@ -456,19 +456,19 @@ export default function Landing() {
                       whileHover="hover"
                       viewport={{ once: true }}
                       variants={featureVariants}
-                      className="flex items-start gap-4 cursor-default"
+                      className="flex items-start gap-4 cursor-default p-3 rounded-lg hover:bg-yellow-50/50 dark:hover:bg-yellow-900/20 transition-colors"
                     >
                       <motion.div 
                         className="flex-shrink-0 mt-1"
-                        whileHover={{ scale: 1.2, rotate: 12 }}
+                        whileHover={{ scale: 1.25, rotate: 12 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <div className="flex items-center justify-center h-5 w-5 rounded-full bg-yellow-600 dark:bg-yellow-400">
-                          <Sparkles className="h-3 w-3 text-white" />
+                        <div className="flex items-center justify-center h-6 w-6 rounded-full bg-gradient-to-br from-yellow-500 to-yellow-600 dark:from-yellow-400 dark:to-yellow-500 shadow-md">
+                          <Sparkles className="h-3.5 w-3.5 text-white" />
                         </div>
                       </motion.div>
                       <div>
-                        <p className="font-semibold text-foreground">{feature}</p>
+                        <p className="font-semibold text-foreground text-base">{feature}</p>
                       </div>
                     </motion.div>
                   ))}
@@ -476,17 +476,17 @@ export default function Landing() {
 
                 <motion.button
                   onClick={() => navigate('/login?role=attendee')}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.06, y: -3 }}
+                  whileTap={{ scale: 0.96 }}
                   transition={{ duration: 0.2 }}
-                  className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="mt-8 inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-gray-800 dark:text-gray-100 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-200 dark:from-amber-700 dark:via-amber-600 dark:to-amber-500 hover:from-amber-300 hover:via-amber-200 hover:to-yellow-100 transition-all duration-300 shadow-lg hover:shadow-2xl border border-amber-200/50 dark:border-amber-600/50"
                 >
                   Join as Attendee
                   <motion.div
-                    whileHover={{ x: 3 }}
+                    whileHover={{ x: 4 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-5 w-5 text-current" />
                   </motion.div>
                 </motion.button>
               </div>
@@ -496,15 +496,16 @@ export default function Landing() {
           {/* Bottom CTA */}
           <motion.div
             variants={itemVariants}
-            className="text-center mt-16"
+            className="text-center mt-12"
           >
             <motion.button
               onClick={() => navigate('/login')}
-              className="group inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium transition-colors"
-              whileHover={{ x: 5 }}
+              className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-gray-800 dark:text-gray-100 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-200 dark:from-amber-700 dark:via-amber-600 dark:to-amber-500 hover:from-amber-300 hover:via-amber-200 hover:to-yellow-100 transition-all duration-300 shadow-md hover:shadow-lg border border-amber-200/60 dark:border-amber-600/40"
+              whileHover={{ x: 5, y: -2 }}
+              whileTap={{ scale: 0.96 }}
             >
               Already have an account? Sign in
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="h-5 w-5 text-current group-hover:translate-x-1 transition-transform" />
             </motion.button>
           </motion.div>
         </motion.div>
@@ -515,14 +516,14 @@ export default function Landing() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1, duration: 0.6 }}
-        className="py-8 px-4 border-t border-border/50"
+        className="py-10 px-4 border-t border-amber-200/30 dark:border-amber-800/30 bg-gradient-to-b from-transparent to-amber-50/30 dark:to-amber-950/20"
       >
-        <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <span>© 2025 lead-Recall. All rights reserved.</span>
-          <div className="flex items-center gap-6">
-            <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
-            <a href="#" className="hover:text-foreground transition-colors">Terms</a>
-            <a href="#" className="hover:text-foreground transition-colors">Contact</a>
+        <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-sm">
+          <span className="text-foreground/70 font-medium">© 2025 lead-Recall. All rights reserved.</span>
+          <div className="flex items-center gap-8">
+            <a href="#" className="text-foreground/60 hover:text-amber-600 dark:hover:text-amber-400 font-medium transition-colors">Privacy</a>
+            <a href="#" className="text-foreground/60 hover:text-amber-600 dark:hover:text-amber-400 font-medium transition-colors">Terms</a>
+            <a href="#" className="text-foreground/60 hover:text-amber-600 dark:hover:text-amber-400 font-medium transition-colors">Contact</a>
           </div>
         </div>
       </motion.footer>

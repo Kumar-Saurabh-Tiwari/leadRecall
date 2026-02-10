@@ -31,17 +31,17 @@ export function BottomNav() {
               to={to}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all relative",
-                active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >
               {active && (
                 <motion.div
                   layoutId="bottomNavIndicator"
-                  className="absolute inset-0 bg-accent rounded-xl"
+                  className="absolute inset-0 bg-primary/20 rounded-xl"
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 />
               )}
-              <Icon className={cn("h-5 w-5 relative z-10", active && "text-primary")} />
+              <Icon className={cn("h-5 w-5 relative z-10", active && "text-foreground")} />
               <span className="text-xs font-medium relative z-10">{label}</span>
             </NavLink>
           );

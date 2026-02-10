@@ -57,6 +57,7 @@ export interface Entry {
   email?: string;
   phone?: string;
   image?: string;
+  role?: string;
 }
 
 export interface Event {
@@ -65,9 +66,11 @@ export interface Event {
   date: Date;
   endDate?: Date;
   location: string;
+  locationName?: string;
   role: UserRole;
   description?: string;
   image?: string;
+  organizer?: string;
 }
 
 export interface CalendarItem {

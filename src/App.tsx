@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { EventProvider } from "@/contexts/EventContext";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import RegisterExhibitor from "./pages/RegisterExhibitor";
@@ -13,6 +14,7 @@ import DashboardLayout from "./pages/DashboardLayout";
 import Home from "./pages/dashboard/Home";
 import Events from "./pages/dashboard/Events";
 import EventDetail from "./pages/dashboard/EventDetail";
+import EventInfo from "./pages/dashboard/EventInfo";
 import CalendarPage from "./pages/dashboard/Calendar";
 import Profile from "./pages/dashboard/Profile";
 import EntryDetail from "./pages/dashboard/EntryDetail";
@@ -34,6 +36,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <ScrollToTop />
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Landing />} />
@@ -49,6 +52,7 @@ const App = () => (
                   <Route path="edit/:id" element={<EditEntry />} />
                   <Route path="events" element={<Events />} />
                   <Route path="event/:id" element={<EventDetail />} />
+                  <Route path="event-info/:id" element={<EventInfo />} />
                   <Route path="calendar" element={<CalendarPage />} />
                   <Route path="profile" element={<Profile />} />
                   {/* Add Entry Routes */}

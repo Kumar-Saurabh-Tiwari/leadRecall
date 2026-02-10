@@ -9,6 +9,7 @@ LeadRecall Connect is a web application designed to help attendees and exhibitor
 - **Contact Management**: Add and organize contacts from events.
 - **QR/OCR Scanning**: Scan QR codes or use OCR to quickly add contacts.
 - **Calendar Integration**: View and manage event schedules.
+- **Weather Information**: Real-time weather data for event locations.
 - **Dashboard**: Personalized dashboard for users to access all features.
 - **Authentication**: Secure login and registration system.
 
@@ -39,6 +40,7 @@ LeadRecall Connect is a web application designed to help attendees and exhibitor
 5. **Additional Features**:
    - **Entry Details**: View and edit individual entries.
    - **Event Details**: Detailed view of events, including associated contacts.
+   - **Weather Information**: Click the Weather button on event details to view current weather, forecast, and historical data for the event location.
    - **Offline Support**: PWA features for offline access.
 
 ## Technologies Used
@@ -65,21 +67,31 @@ LeadRecall Connect is a web application designed to help attendees and exhibitor
    bun install
    ```
 
-3. Start the development server:
+4. Start the development server:
    ```sh
    npm run dev
    # or
    bun run dev
    ```
 
-4. Build for production:
+5  VITE_OPENWEATHER_API_KEY=your_api_key_here
+   ```
+
+4. Start the development server:
+   ```sh
+   npm run dev
+   # or
+   bun run dev
+   ```
+
+5. Build for production:
    ```sh
    npm run build
    # or
    bun run build
    ```
 
-5. Preview production build:
+6. Preview production build:
    ```sh
    npm run preview
    # or
