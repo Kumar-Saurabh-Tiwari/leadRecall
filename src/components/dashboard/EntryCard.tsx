@@ -27,28 +27,28 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
       >
         <div
           onClick={onClick}
-          className="bg-card dark:bg-slate-900 rounded-3xl border border-border overflow-hidden shadow-card hover:shadow-elevated hover:border-primary/20 transition-all duration-500 cursor-pointer h-full flex flex-col group"
+          className="bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 overflow-hidden shadow-lg hover:shadow-2xl hover:border-slate-300/80 dark:hover:border-slate-600/60 transition-all duration-300 cursor-pointer h-full flex flex-col group"
         >
           {/* Image Section - High quality portrait */}
-          <div className="w-full h-72 bg-muted/30 flex items-center justify-center overflow-hidden relative">
+          <div className="w-full h-56 bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700/50 flex items-center justify-center overflow-hidden relative">
             {entry.image ? (
               <img 
                 src={entry.image} 
                 alt={entry.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
-                <User className="h-24 w-24 text-primary/10" />
+              <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-100 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center">
+                <User className="h-20 w-20 text-slate-300 dark:text-slate-500" />
               </div>
             )}
             
-            <div className="absolute top-4 right-4">
+            <div className="absolute top-3 right-3">
               <Badge 
-                className={`shadow-sm border-none font-semibold ${
+                className={`shadow-md border border-white/20 font-semibold text-xs px-3 py-1 ${
                   entry.type === 'exhibitor' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-secondary text-secondary-foreground'
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white' 
+                    : 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white'
                 }`}
               >
                 {entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee'}
@@ -58,42 +58,44 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
 
           {/* Content Section */}
           <div className="flex-1 p-6 flex flex-col">
-            <div className="mb-4">
-              <h3 className="font-bold text-foreground text-2xl tracking-tight group-hover:text-primary transition-colors mb-1">
+            <div className="mb-3">
+              <h3 className="font-bold text-foreground dark:text-white text-xl tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-2">
                 {entry.name}
               </h3>
-              <div className="flex items-center gap-2 text-muted-foreground font-medium">
-                <Building2 className="h-4 w-4 text-primary/60" />
+              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 text-sm font-medium">
+                <Building2 className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
                 <span className="truncate">{entry.company || 'Private Organization'}</span>
               </div>
             </div>
 
             {entry.notes && (
-              <p className="text-sm text-muted-foreground/80 line-clamp-3 mb-6 leading-relaxed italic border-l-2 border-primary/20 pl-3">
-                "{entry.notes}"
-              </p>
+              <div className="py-3 my-2 border-l-3 border-blue-500/40 pl-3">
+                <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed italic">
+                  "{entry.notes}"
+                </p>
+              </div>
             )}
 
-            <div className="mt-auto space-y-4">
-              <div className="flex items-center justify-between text-xs pt-4 border-t border-border/40">
-                <div className="flex items-center gap-1.5 text-muted-foreground uppercase tracking-wider font-semibold">
-                  <Calendar className="h-3.5 w-3.5 text-primary" />
+            <div className="mt-auto space-y-4 pt-3">
+              <div className="flex items-center justify-between text-xs pt-3 border-t border-slate-200 dark:border-slate-700/50">
+                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-semibold">
+                  <Calendar className="h-3.5 w-3.5 text-slate-400" />
                   {format(entry.createdAt, 'MMM d, yyyy')}
                 </div>
-                <div className="font-medium text-muted-foreground/60 bg-muted/40 px-2 py-0.5 rounded">
-                  {format(entry.createdAt, 'hh:mm a')}
+                <div className="font-medium text-slate-500 dark:text-slate-400 text-xs">
+                  {format(entry.createdAt, 'h:mm a')}
                 </div>
               </div>
 
               <div className="flex items-center justify-between gap-3">
                 <div className="flex gap-2">
                   {entry.linkedin && entry.linkedin !== 'N/A' && (
-                    <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-800/30">
+                    <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-200/50 dark:border-blue-400/30 hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-colors shadow-sm cursor-pointer group/icon">
                       <Linkedin className="h-4 w-4" />
                     </div>
                   )}
                   {entry.phone && entry.phone !== 'N/A' && (
-                    <div className="w-9 h-9 rounded-full bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 flex items-center justify-center border border-green-100 dark:border-green-800/30">
+                    <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/50 dark:border-emerald-400/30 hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-colors shadow-sm cursor-pointer group/icon">
                       <Phone className="h-4 w-4" />
                     </div>
                   )}
@@ -101,10 +103,10 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
                 
                 <Badge 
                   variant="outline"
-                  className="bg-amber-50/50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/20 font-bold px-3 py-1 rounded-full whitespace-nowrap overflow-hidden max-w-[120px]"
+                  className="bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-400/30 font-semibold px-2.5 py-1 rounded-full whitespace-nowrap overflow-hidden max-w-[140px] shadow-sm"
                 >
-                  <span className="truncate flex items-center gap-1.5">
-                    <span className="scale-110">🎪</span> {entry.event}
+                  <span className="truncate flex items-center gap-1">
+                    <span>🎪</span> {entry.event}
                   </span>
                 </Badge>
               </div>
