@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  ArrowLeft, 
-  Calendar, 
-  MapPin, 
-  Users, 
+import {
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  Users,
   Briefcase,
   Plus,
   UserPlus,
@@ -69,7 +69,7 @@ export default function EventDetail() {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'compact'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'compact'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'exhibitor' | 'attendee'>('all');
   const [isWeatherDialogOpen, setIsWeatherDialogOpen] = useState(false);
@@ -79,7 +79,7 @@ export default function EventDetail() {
     const firstEmail = item.oContactData?.sEmail?.[0]?.Email || '';
     const firstPhone = item.oContactData?.contacts?.[0]?.sContactNumber || '';
     const firstProfile = item.oContactData?.profiles?.[0]?.sProfileLink || '';
-    
+
     return {
       id: item._id || item.id,
       name: `${item.oContactData?.sFirstName || ''} ${item.oContactData?.sLastName || ''}`.trim(),
@@ -99,16 +99,16 @@ export default function EventDetail() {
   useEffect(() => {
     const fetchEventAndEntries = async () => {
       if (!id) return;
-      
+
       try {
         setIsLoading(true);
         const foundEvent = events.find(e => e.id === id);
-        
+
         if (!foundEvent) {
           navigate('/dashboard/events');
           return;
         }
-        
+
         setEvent(foundEvent);
 
         // Fetch entries from API if user is authenticated
@@ -119,7 +119,7 @@ export default function EventDetail() {
               user.role,
               id
             );
-            
+
             if (response && typeof response === 'object' && 'data' in response && Array.isArray((response as { data: ApiEntryResponse[] }).data)) {
               const mappedEntries = (response as { data: ApiEntryResponse[] }).data.map(mapApiResponseToEntry);
               setEntries(mappedEntries);
@@ -196,7 +196,7 @@ export default function EventDetail() {
   // Filter and search entries
   const filteredEntries = entries.filter(entry => {
     const matchesSearch = entry.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          entry.company.toLowerCase().includes(searchQuery.toLowerCase());
+      entry.company.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filterType === 'all' || entry.type === filterType;
     return matchesSearch && matchesFilter;
   });
@@ -257,7 +257,7 @@ export default function EventDetail() {
       </motion.div>
 
       {/* Content */}
-      <div className="px-4 py-3 space-y-3">
+      <div className="px-2 py-3 space-y-3">
         {/* Event Details */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -277,7 +277,7 @@ export default function EventDetail() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                 </div>
               )}
-              
+
               {/* Content - Right Side */}
               <CardContent className="flex-1 p-3 flex flex-col justify-between">
                 <div>
@@ -297,11 +297,11 @@ export default function EventDetail() {
                       const now = new Date();
                       const eventStart = new Date(event.date);
                       const eventEnd = event.endDate ? new Date(event.endDate) : new Date(event.date);
-                      
+
                       let status = 'Upcoming';
                       let statusColor = 'bg-blue-50/90 text-blue-900 border-0';
                       let Icon = Calendar;
-                      
+
                       if (now > eventEnd) {
                         status = 'Past';
                         statusColor = 'bg-gray-100/90 text-gray-700 border-0';
@@ -309,9 +309,9 @@ export default function EventDetail() {
                         status = 'Live';
                         statusColor = 'gradient-primary text-primary-foreground border-0';
                       }
-                      
+
                       return (
-                        <Badge 
+                        <Badge
                           variant="secondary"
                           className={`flex-shrink-0 text-xs ${statusColor}`}
                         >
@@ -414,28 +414,15 @@ export default function EventDetail() {
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium text-muted-foreground uppercase">View:</span>
                   <div className="flex gap-1 bg-muted p-1 rounded-lg">
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setViewMode('grid')}
-                      className={`p-2 rounded-md transition-all ${
-                        viewMode === 'grid'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                      title="Grid View"
-                    >
-                      <Grid3x3 className="h-4 w-4" />
-                    </motion.button>
+
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setViewMode('list')}
-                      className={`p-2 rounded-md transition-all ${
-                        viewMode === 'list'
+                      className={`p-2 rounded-md transition-all ${viewMode === 'list'
                           ? 'bg-primary text-primary-foreground'
                           : 'text-muted-foreground hover:text-foreground'
-                      }`}
+                        }`}
                       title="List View"
                     >
                       <List className="h-4 w-4" />
@@ -443,12 +430,23 @@ export default function EventDetail() {
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => setViewMode('compact')}
-                      className={`p-2 rounded-md transition-all ${
-                        viewMode === 'compact'
+                      onClick={() => setViewMode('grid')}
+                      className={`p-2 rounded-md transition-all ${viewMode === 'grid'
                           ? 'bg-primary text-primary-foreground'
                           : 'text-muted-foreground hover:text-foreground'
-                      }`}
+                        }`}
+                      title="Grid View"
+                    >
+                      <Grid3x3 className="h-4 w-4" />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setViewMode('compact')}
+                      className={`p-2 rounded-md transition-all ${viewMode === 'compact'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                        }`}
                       title="Compact View"
                     >
                       <LayoutGrid className="h-4 w-4" />
@@ -518,8 +516,8 @@ export default function EventDetail() {
                     <Users className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <p className="text-muted-foreground text-sm mb-3">
-                    {searchQuery || filterType !== 'all' 
-                      ? 'No entries match your filters' 
+                    {searchQuery || filterType !== 'all'
+                      ? 'No entries match your filters'
                       : 'No entries collected yet'}
                   </p>
                   {!(searchQuery || filterType !== 'all') && (
@@ -541,13 +539,12 @@ export default function EventDetail() {
                   )}
                 </div>
               ) : (
-                <div className={`${
-                  viewMode === 'grid'
+                <div className={`${viewMode === 'grid'
                     ? 'grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4'
                     : viewMode === 'list'
-                    ? 'space-y-3'
-                    : 'grid grid-cols-1 gap-3'
-                }`}>
+                      ? 'space-y-3'
+                      : 'grid grid-cols-1 gap-3'
+                  }`}>
                   {filteredEntries.map((entry, index) => (
                     <EntryCard
                       key={entry.id}

@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { eventService } from '@/services/eventService';
 import { useEvents } from '../../../contexts/EventContext';
 import { compressImage } from '@/lib/utils';
+import LocationSelector from '@/components/LocationSelector';
 import type { UserRole } from '@/types';
 
 export default function AddEvent() {
@@ -43,6 +44,8 @@ export default function AddEvent() {
     costPerTicket: '',
   });
 
+  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -72,6 +75,46 @@ export default function AddEvent() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Handle address selection from LocationSelector
+  const handleAddressSelect = (
+    address: string,
+    coordinates?: { lat: number; lng: number },
+    addressComponents?: {
+      street?: string;
+      city?: string;
+      district?: string;
+      postcode?: string;
+      country?: string;
+      venueName?: string;
+    }
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      address1: address,
+      // Auto-populate city and postcode from address components
+      city: addressComponents?.city || prev.city,
+      postcode: addressComponents?.postcode || prev.postcode,
+      // Auto-populate venue name if available and not already set
+      venueName: addressComponents?.venueName && !prev.venueName ? addressComponents.venueName : prev.venueName,
+    }));
+
+    if (coordinates) {
+      setLocationCoords(coordinates);
+    }
+  };
+
+  // Handle clear address
+  const handleAddressClear = () => {
+    setFormData(prev => ({
+      ...prev,
+      address1: '',
+      city: '',
+      postcode: '',
+      // Keep venueName as user may want to keep it
+    }));
+    setLocationCoords(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -189,7 +232,10 @@ export default function AddEvent() {
         sLogo: sMediaUrl,
         adminEmail: user?.email || '',
         sLocationPhysical: formData.address1,
-        sShortDescription: formData.additionalNotes
+        sShortDescription: formData.additionalNotes,
+        ...(locationCoords && {
+          dLocationCoordinates: `${locationCoords.lat},${locationCoords.lng}`
+        })
       }
 
       // Call API to create event - wrap in eventData object for backend
@@ -368,21 +414,16 @@ export default function AddEvent() {
                     />
                   </div>
 
-                  {/* Address 1 */}
-                  <div>
-                    <Label htmlFor="address1" className="text-sm font-medium mb-2">
-                      Address <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="address1"
-                      name="address1"
-                      type="text"
-                      placeholder="e.g., 747 Market Street"
-                      value={formData.address1}
-                      onChange={handleInputChange}
-                      className="bg-secondary/50 border-border/50 focus:ring-primary"
-                    />
-                  </div>
+                  {/* Location Selector with Google Maps Integration */}
+                  <LocationSelector
+                    value={formData.address1}
+                    onChange={handleAddressSelect}
+                    onClear={handleAddressClear}
+                    placeholder="e.g., 747 Market Street"
+                    label="Address"
+                    required={true}
+                    isSelected={!!formData.address1}
+                  />
 
                   {/* City & Postcode */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, QrCode, UserPlus, ScanText, Calendar, Check } from 'lucide-react';
+import { Plus, X, QrCode, UserPlus, ScanText, Calendar, Check, MapPin, Clock, Zap, CheckCircle2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,9 +11,12 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { eventService } from '@/services/eventService';
 import { Event } from '@/types';
 import { useEvents } from '@/contexts/EventContext';
+import { format } from 'date-fns';
 
 interface AddOption {
   id: string;
@@ -22,6 +25,39 @@ interface AddOption {
   icon: typeof QrCode;
   path: string;
 }
+
+const getEventTimeline = (eventDate: Date): 'upcoming' | 'live' | 'past' => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const eventDateOnly = new Date(eventDate);
+  eventDateOnly.setHours(0, 0, 0, 0);
+
+  if (eventDateOnly.getTime() > today.getTime()) return 'upcoming';
+  if (eventDateOnly.getTime() === today.getTime()) return 'live';
+  return 'past';
+};
+
+const getTimelineIcon = (timeline: 'upcoming' | 'live' | 'past') => {
+  switch (timeline) {
+    case 'upcoming':
+      return <Clock className="h-3 w-3 mr-1" />;
+    case 'live':
+      return <Zap className="h-3 w-3 mr-1" />;
+    case 'past':
+      return <CheckCircle2 className="h-3 w-3 mr-1" />;
+  }
+};
+
+const getTimelineGradient = (timeline: 'upcoming' | 'live' | 'past') => {
+  switch (timeline) {
+    case 'upcoming':
+      return 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0';
+    case 'live':
+      return 'bg-gradient-to-r from-red-500 to-orange-500 text-white border-0';
+    case 'past':
+      return 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0';
+  }
+};
 
 const addOptions: AddOption[] = [
   {
@@ -102,49 +138,112 @@ export function AddEntryFAB({ onEntryAdded }: { onEntryAdded?: () => void }) {
     <>
       {/* Event Selection Dialog */}
       <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Select Event</DialogTitle>
             <DialogDescription>
               Choose an event to associate with your new entry
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-2">
+          <ScrollArea className="h-[450px] pr-4">
+            <div className="space-y-3">
               {isLoading ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-12 text-muted-foreground">
                   Loading events...
                 </div>
               ) : events.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-12 text-muted-foreground">
                   No events available
                 </div>
               ) : (
-                events.map((event) => (
-                  <motion.button
-                    key={event.id}
-                    onClick={() => handleEventSelect(event)}
-                    whileHover={{ x: 4 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                      selectedEvent?.id === event.id
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-sm">{event.name}</h3>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(event.date).toLocaleDateString()} • {event.location}
-                        </p>
-                      </div>
-                      {selectedEvent?.id === event.id && (
-                        <Check className="h-4 w-4 text-primary ml-2" />
-                      )}
-                    </div>
-                  </motion.button>
-                ))
+                events.map((event, index) => {
+                  const timeline = getEventTimeline(event.date);
+                  const isSelected = selectedEvent?.id === event.id;
+                  
+                  return (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                    >
+                      <motion.button
+                        onClick={() => handleEventSelect(event)}
+                        whileHover={{ y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`w-full text-left transition-all rounded-lg overflow-hidden ${
+                          isSelected 
+                            ? 'ring-2 ring-primary' 
+                            : ''
+                        }`}
+                      >
+                        <Card className={`shadow-md hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden bg-white dark:bg-card ${
+                          isSelected 
+                            ? 'border-primary/50 border-2' 
+                            : 'border border-border/50'
+                        }`}>
+                          <CardContent className="p-3 flex gap-4">
+                            {/* Event Image - Left */}
+                            <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden relative">
+                              {event.image ? (
+                                <img 
+                                  src={event.image} 
+                                  alt={event.name}
+                                  onError={(e) => {
+                                    e.currentTarget.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect fill='%23e5e7eb' width='96' height='96'/%3E%3Ctext x='50%' y='50%' font-size='10' fill='%236b7280' text-anchor='middle' dy='.3em' font-family='sans-serif'%3ENo Image%3C/text%3E%3C/svg%3E`;
+                                  }}
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-primary/20 via-primary/10 to-background flex items-center justify-center">
+                                  <Calendar className="h-6 w-6 text-primary/40" />
+                                </div>
+                              )}
+                              {/* Badge Overlay */}
+                              <div className="absolute bottom-1 left-1 right-1">
+                                <Badge className={`${getTimelineGradient(timeline)} shadow-md text-[10px] w-full justify-center py-0.5`}>
+                                  {getTimelineIcon(timeline)}
+                                  {timeline.charAt(0).toUpperCase() + timeline.slice(1)}
+                                </Badge>
+                              </div>
+                            </div>
+
+                            {/* Event Details */}
+                            <div className="flex-1 flex flex-col gap-1.5">
+                              {/* Title */}
+                              <div className="flex items-start justify-between gap-2">
+                                <h3 className="font-bold text-sm text-foreground line-clamp-1 flex-1">
+                                  {event.name}
+                                </h3>
+                                {isSelected && (
+                                  <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="flex-shrink-0"
+                                  >
+                                    <Check className="h-5 w-5 text-primary" />
+                                  </motion.div>
+                                )}
+                              </div>
+
+                              {/* Location & Date */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/70" />
+                                  <span className="line-clamp-1">{event.location}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <Calendar className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/70" />
+                                  <span>{format(event.date, 'MMM d, yyyy')}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.button>
+                    </motion.div>
+                  );
+                })
               )}
             </div>
           </ScrollArea>
@@ -220,11 +319,11 @@ export function AddEntryFAB({ onEntryAdded }: { onEntryAdded?: () => void }) {
 
                   {/* Icon Button */}
                   <motion.div
-                    className="h-12 w-12 rounded-full bg-card border border-border/50 shadow-card flex items-center justify-center group-hover:border-primary/30 group-hover:shadow-elevated transition-all"
+                    className="h-12 w-12 rounded-full bg-yellow-100 border border-border/50 shadow-card flex items-center justify-center group-hover:border-primary/30 group-hover:shadow-elevated transition-all"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <option.icon className="h-5 w-5 text-primary" />
+                    <option.icon className="h-5 w-5 text-gray-500" />
                   </motion.div>
                 </motion.button>
               ))}

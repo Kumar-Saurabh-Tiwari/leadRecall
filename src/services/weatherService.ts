@@ -38,7 +38,7 @@ export interface WeatherData {
 }
 
 class WeatherService {
-  private readonly API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || '';
+  private readonly API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || 'c5700728a919f885a982683238c82f06';
   private readonly BASE_URL = 'https://api.openweathermap.org/data/2.5';
 
   /**
@@ -81,12 +81,23 @@ class WeatherService {
         };
       }
 
+      // Validate event has a location
+      if (!event.location || event.location.trim() === '') {
+        return {
+          current: {} as WeatherCurrent,
+          forecast: [],
+          relevantHours: [],
+          summary: 'No location information available for this event. Cannot fetch weather data.',
+          isEventSoon: false,
+          virtual: false,
+          timestamp: Date.now(),
+          error: true,
+          message: 'No location provided',
+        };
+      }
+
       // Get coordinates from event location
       const coords = await this.getCoordinates(event.location);
-
-      if (!coords || (coords as any).error) {
-        throw new Error('Unable to determine event location');
-      }
 
       const eventTime = timestamp || Math.floor(new Date(event.date).getTime() / 1000);
       const currentTime = Math.floor(Date.now() / 1000);
@@ -126,32 +137,55 @@ class WeatherService {
   }
 
   /**
-   * Extract coordinates from location string
+   * Extract coordinates from location string using custom geocoding API
    */
-  private async getCoordinates(location: string): Promise<{ lat: number; lng: number } | null> {
-    if (!location) {
-      return null;
+  private async getCoordinates(location: string): Promise<{ lat: number; lng: number }> {
+    if (!location || location.trim() === '') {
+      throw new Error('Location is required to fetch weather data');
     }
 
     try {
-      // Try to use OpenWeatherMap's Geocoding API if available
-      const encodedLocation = encodeURIComponent(location);
-      const url = `${this.BASE_URL}/weather?q=${encodedLocation}&units=metric&appid=${this.API_KEY}`;
+      // Use custom geocoding API
+      const encodedLocation = encodeURIComponent(location.trim());
+      const geoUrl = `https://mirecall.ctoninja.tech/api/v1/media/search-location?query=${encodedLocation}`;
+      
+      console.log('Geocoding address:', location);
+      const geoResponse = await fetch(geoUrl);
+      
+      if (geoResponse.ok) {
+        const geoData = await geoResponse.json();
+        console.log('Geocoding response:', geoData);
+        
+        if (geoData && geoData.results && Array.isArray(geoData.results) && geoData.results.length > 0) {
+          const location = geoData.results[0].geometry?.location;
+          if (location && location.lat && location.lng) {
+            return {
+              lat: location.lat,
+              lng: location.lng,
+            };
+          }
+        }
+      }
+
+      // Fallback to OpenWeatherMap's weather API if custom API fails
+      const encodedLocation2 = encodeURIComponent(location.trim());
+      const url = `${this.BASE_URL}/weather?q=${encodedLocation2}&units=metric&appid=${this.API_KEY}`;
       
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
-        return {
-          lat: data.coord.lat,
-          lng: data.coord.lon,
-        };
+        if (data.coord && data.coord.lat && data.coord.lon) {
+          return {
+            lat: data.coord.lat,
+            lng: data.coord.lon,
+          };
+        }
       }
 
-      // Fallback: return null if location cannot be geocoded
-      return null;
+      throw new Error(`Unable to determine coordinates for location: ${location}`);
     } catch (error) {
       console.error('Error geocoding location:', error);
-      return null;
+      throw error;
     }
   }
 

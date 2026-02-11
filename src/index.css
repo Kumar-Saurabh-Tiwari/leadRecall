@@ -11,7 +11,7 @@ body,
 }
 
 body {
-  background: linear-gradient(161.95deg, #FFF6E5 6.63%, #F5F5F5 47.11%);
+  background: linear-gradient(161.95deg, #FFFEF5 6.63%, #FCFCFC 47.11%);
   background-attachment: fixed;
 }
 
@@ -49,7 +49,7 @@ body {
 
     /* Custom tokens for lead-Recall */
     --gradient-primary: linear-gradient(108.18deg, #EBCB42 0%, #FFEC99 50.7%, #EBCB42 97.5%);
-    --gradient-hero: linear-gradient(161.95deg, #FFF6E5 6.63%, #F5F5F5 47.11%, rgba(255, 255, 255, 0.8) 100%);
+    --gradient-hero: linear-gradient(161.95deg, #FFFEF5 6.63%, #FCFCFC 47.11%, rgba(255, 255, 255, 0.8) 100%);
     --gradient-radial: radial-gradient(ellipse at top, hsl(40, 100%, 92%) 0%, transparent 50%);
     --shadow-soft: 0 4px 20px -4px hsl(48 78% 58% / 0.15);
     --shadow-card: 0 4px 24px -4px hsl(48 30% 30% / 0.08), 0 1px 2px hsl(48 30% 30% / 0.04);

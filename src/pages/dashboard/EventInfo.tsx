@@ -129,22 +129,44 @@ export default function EventInfo() {
         </Button>
       </div>
 
-      {/* Organizer & Event Header */}
-      <div className="flex gap-4 mb-8">
-        {event.image ? (
-          <img 
-            src={event.image} 
-            alt={event.name} 
-            className="w-20 h-20 rounded-xl object-cover shadow-sm border border-white"
-          />
-        ) : (
-          <div className="w-20 h-20 rounded-xl bg-gray-200" />
-        )}
-        <div className="flex flex-col justify-center">
-          {/* <p className="text-sm text-gray-500 mb-0.5 font-medium">Organized by {event.organizer || "Joshua McClung"}</p> */}
-          <h1 className="text-xl font-bold text-gray-900 leading-tight">{event.name}</h1>
+      {/* Event Header Card */}
+      <Card className="border-none shadow-md mb-8 bg-white overflow-hidden">
+        <div className="relative">
+          {/* Background Gradient */}
+          <div className="relative h-16 bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-100 overflow-hidden" />
+
+          {/* Content Overlay */}
+          <div className="relative px-6 pb-6 pt-0 -mt-2 flex gap-4 items-end">
+            {/* Event Image */}
+            <div className="flex-shrink-0 relative z-10">
+              {event.image ? (
+                <img 
+                  src={event.image} 
+                  alt={event.name} 
+                  className="w-24 h-24 rounded-2xl object-cover shadow-lg border-4 border-white"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-2xl bg-gray-300 shadow-lg border-4 border-white" />
+              )}
+            </div>
+
+            {/* Event Details */}
+            <div className="flex-1 pb-2">
+              {event.organizer && (
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                  {event.organizer}
+                </p>
+              )}
+              <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{event.name}</h1>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-orange-100 text-orange-700 font-semibold border-0 rounded-full text-xs">
+                  Upcoming Event
+                </Badge>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </Card>
 
       {/* Summary Cards */}
       {/* <div className="grid grid-cols-2 gap-4 mb-6">

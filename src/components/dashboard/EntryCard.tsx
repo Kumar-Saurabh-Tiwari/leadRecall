@@ -129,7 +129,7 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
           onClick={onClick}
         >
           {/* Top Image Section - Portrait aspect */}
-          <div className="relative w-full aspect-[4/5] bg-muted/20 flex-shrink-0 flex items-center justify-center overflow-hidden">
+          <div className="relative w-full aspect-[4/3] bg-muted/20 flex-shrink-0 flex items-center justify-center overflow-hidden">
             {entry.image ? (
               <img 
                 src={entry.image} 
