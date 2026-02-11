@@ -27,7 +27,7 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
       >
         <div
           onClick={onClick}
-          className="bg-card dark:bg-slate-900 rounded-3xl border border-border/50 overflow-hidden shadow-card hover:shadow-elevated hover:border-primary/20 transition-all duration-500 cursor-pointer h-full flex flex-col group"
+          className="bg-card dark:bg-slate-900 rounded-3xl border border-border overflow-hidden shadow-card hover:shadow-elevated hover:border-primary/20 transition-all duration-500 cursor-pointer h-full flex flex-col group"
         >
           {/* Image Section - High quality portrait */}
           <div className="w-full h-72 bg-muted/30 flex items-center justify-center overflow-hidden relative">
@@ -125,7 +125,7 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
         className="h-full"
       >
         <Card 
-          className="shadow-sm hover:shadow-md transition-all cursor-pointer group border-border/60 overflow-hidden flex flex-col h-full bg-card"
+          className="shadow-sm hover:shadow-md transition-all cursor-pointer group border-border overflow-hidden flex flex-col h-full bg-card"
           onClick={onClick}
         >
           {/* Top Image Section - Portrait aspect */}
@@ -194,10 +194,10 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
         transition={{ duration: 0.3, delay }}
       >
         <div 
-          className="bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all cursor-pointer group border border-border/10 overflow-hidden rounded-3xl p-3"
+          className="bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all cursor-pointer group border border-border/40 overflow-hidden rounded-3xl p-2"
           onClick={onClick}
         >
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             {/* Left Column - Image Section */}
             <div className="relative w-28 h-28 flex-shrink-0">
               {entry.image ? (
@@ -298,7 +298,7 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
       transition={{ duration: 0.3, delay }}
     >
       <Card 
-        className="shadow-card hover:shadow-elevated transition-all cursor-pointer group border-border/50 overflow-hidden h-full"
+        className="shadow-card hover:shadow-elevated transition-all cursor-pointer group border-border overflow-hidden h-full"
         onClick={onClick}
       >
         <CardContent className="p-4 h-full flex flex-col justify-between">
