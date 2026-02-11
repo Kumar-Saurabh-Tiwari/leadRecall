@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { entryService } from '@/services/entryService';
+import { offlineEntryService } from '@/services/offlineEntryService';
 import { Entry } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -57,6 +58,25 @@ export default function EditEntry() {
         setIsLoading(true);
         setError(null);
 
+        // Try to get from IndexedDB first (works offline)
+        const cachedEntry = await offlineEntryService.getById(id);
+        
+        if (cachedEntry) {
+          setEntry(cachedEntry);
+          setFormData({
+            name: cachedEntry.name,
+            company: cachedEntry.company,
+            email: cachedEntry.email || '',
+            phone: cachedEntry.phone || '',
+            linkedin: cachedEntry.linkedin || '',
+            notes: cachedEntry.notes,
+            event: cachedEntry.event,
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // If not in cache, fetch from API
         let apiResponse: any;
 
         // Fetch based on user role
@@ -173,56 +193,25 @@ export default function EditEntry() {
         }
       };
 
-      let response;
-      if (user.role === 'exhibitor') {
-        // Update attendee data
-        response = await entryService.updateExhibitorDataByID(entry.id, updateData);
-      } else {
-        // Update exhibitor data
-        response = await entryService.updateAttendeeDataByID(entry.id, updateData);
-      }
-
-      console.log('Update response:', response);
+      // Use offline service - it handles online/offline automatically
+      await offlineEntryService.updateEntry(
+        entry.id,
+        {
+          name: formData.name,
+          company: formData.company,
+          email: formData.email,
+          phone: formData.phone,
+          linkedin: formData.linkedin,
+          notes: formData.notes,
+          event: formData.event,
+        },
+        updateData,
+        user.email
+      );
 
       // Refetch all entries to update the list
-      let apiResponse;
-      if (user.role === 'exhibitor') {
-        apiResponse = await entryService.getExhibitorData(user.email);
-      } else {
-        apiResponse = await entryService.getAttendeeData(user.email);
-      }
-
-      // Transform API response to Entry format
-      const dataArray = apiResponse?.data || apiResponse;
-      if (dataArray && Array.isArray(dataArray)) {
-        const transformedEntries: Entry[] = dataArray.map((item: any) => {
-          // Get first non-empty event title
-          const validEvent = item.oContactData?.sEventTitles?.find((evt: any) => evt.sTitle && evt.sTitle.trim());
-          
-          // Get first non-N/A LinkedIn profile link
-          const linkedinProfile = item.oContactData?.profiles?.find((prof: any) => prof.sProfileLink && prof.sProfileLink !== 'N/A');
-          
-          return {
-            id: item._id || item.id || crypto.randomUUID(),
-            name: item.oContactData ? 
-              `${item.oContactData.sFirstName || ''} ${item.oContactData.sLastName || ''}`.trim() : 
-              'Unknown',
-            company: item.oContactData?.sCompany || 'Unknown Company',
-            event: validEvent?.sTitle || 'Unknown Event',
-            notes: item.oContactData?.sEntryNotes?.[0] || '',
-            type: user.role === 'exhibitor' ? 'attendee' : 'exhibitor',
-            createdAt: item.dCreatedDate ? new Date(item.dCreatedDate) : new Date(),
-            email: item.oContactData?.sEmail?.[0]?.Email || undefined,
-            phone: item.oContactData?.contacts?.[0]?.sContactNumber || undefined,
-            linkedin: linkedinProfile?.sProfileLink || undefined,
-            profileUrl: undefined,
-            image: undefined
-          };
-        });
-
-        // Update context with new entries
-        setEntriesInContext(transformedEntries);
-      }
+      const updatedEntries = await offlineEntryService.fetchAndCacheEntries(user.email, user.role);
+      setEntriesInContext(updatedEntries);
 
       toast({
         title: 'Success',
@@ -243,20 +232,12 @@ export default function EditEntry() {
   };
 
   const handleDelete = async () => {
-    if (!entry || !user?.email) return;
+    if (!entry || !user?.email || !user?.role) return;
 
     try {
-      let response;
-      console.log('Deleting entry with ID:', user.role);
-      if (user.role === 'exhibitor') {
-        // Delete attendee data
-        response = await entryService.deleteExhibitor(entry.id, user.email);
-      } else {
-        // Delete exhibitor data
-        response = await entryService.deleteAttendee(entry.id, user.email);
-      }
+      // Use offline service - it handles online/offline automatically
+      await offlineEntryService.deleteEntry(entry.id, entry.type, user.email);
 
-      console.log('Delete response:', response);
       toast({
         title: 'Success',
         description: 'Entry deleted successfully',

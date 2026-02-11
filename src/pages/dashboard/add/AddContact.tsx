@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEvents } from '@/contexts/EventContext';
 import { useToast } from '@/hooks/use-toast';
 import { entryService } from '@/services/entryService';
+import { offlineEntryService } from '@/services/offlineEntryService';
 import { UserRole } from '@/types';
 
 interface LocationState {
@@ -217,17 +218,7 @@ export default function AddContact() {
       
       console.log('API payload:', data);
       
-      // Call the appropriate API based on target type
-      let apiResponse;
-      if (data.entryType === 'attendee') {
-        apiResponse = await entryService.addNewAttendeeData(data);
-      } else {
-        apiResponse = await entryService.addNewExhibitorData(data);
-      }
-      
-      console.log('API Response:', apiResponse);
-      
-      // Also add to local service for immediate UI update
+      // Use offline-first service - it handles online/offline automatically
       const entryData = {
         name: `${firstName.trim()} ${lastName.trim()}`,
         company: company.trim(),
@@ -239,7 +230,11 @@ export default function AddContact() {
         linkedin: linkedinUrl.trim() || undefined,
       };
       
-      entryService.add(entryData);
+      // offlineEntryService handles: 
+      // - Saving to IndexedDB immediately (works offline)
+      // - Syncing to server if online
+      // - Queuing for sync if offline
+      await offlineEntryService.addEntry(entryData, data);
 
       toast({
         title: `${targetLabel} added!`,

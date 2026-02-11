@@ -1,5 +1,6 @@
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { BottomNav } from '@/components/layout/BottomNav';
+import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo } from '@/components/shared/Logo';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,9 @@ export default function DashboardLayout() {
       
       {/* Bottom Navigation */}
       <BottomNav />
+      
+      {/* Sync Status Indicator */}
+      {/* <SyncStatusIndicator /> */}
     </div>
   );
 }

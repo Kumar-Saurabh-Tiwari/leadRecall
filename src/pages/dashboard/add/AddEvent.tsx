@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { eventService } from '@/services/eventService';
+import { offlineEventService } from '@/services/offlineEventService';
 import { useEvents } from '../../../contexts/EventContext';
 import { compressImage } from '@/lib/utils';
 import LocationSelector from '@/components/LocationSelector';
@@ -236,10 +237,25 @@ export default function AddEvent() {
         ...(locationCoords && {
           dLocationCoordinates: `${locationCoords.lat},${locationCoords.lng}`
         })
-      }
+      };
 
-      // Call API to create event - wrap in eventData object for backend
-      await eventService.addNewLeadEvent({ eventData: eventDataPayload });
+      // Prepare event for local storage
+      const eventData = {
+        name: formData.eventTitle,
+        date: new Date(startDateTime),
+        endDate: new Date(endDateTime),
+        location: formData.address1,
+        role: user?.role || 'attendee' as UserRole,
+        description: formData.additionalNotes,
+        image: sMediaUrl,
+      };
+
+      // Use offline-first service - it handles online/offline automatically
+      // offlineEventService handles:
+      // - Saving to IndexedDB immediately (works offline)
+      // - Syncing to server if online
+      // - Queuing for sync if offline
+      await offlineEventService.addEvent(eventData, { eventData: eventDataPayload });
 
       toast({
         title: 'Success',
