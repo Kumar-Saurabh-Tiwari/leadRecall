@@ -1,129 +1,228 @@
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Briefcase, Users, Sparkles, Zap, ArrowRight } from 'lucide-react';
+import { motion, useAnimation } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import {
+  Briefcase,
+  Users,
+  Sparkles,
+  Zap,
+  ArrowRight,
+  QrCode,
+  Scan,
+  FileText,
+  Calendar,
+  BarChart3,
+  Shield,
+  Clock,
+  Globe,
+  Award,
+  Check,
+  Building2,
+  TrendingUp,
+  Star,
+  Menu,
+  X
+} from 'lucide-react';
 import { Logo } from '@/components/shared/Logo';
+import { Button } from '@/components/ui/button';
 
 export default function Landing() {
   const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const exhibitorFeatures = [
-    'Instant lead capture',
-    'QR-based attendee connections',
-    'Real-time attendee insights',
-    'Follow-up reminders',
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+    setIsMenuOpen(false);
+  };
+
+  const stats = [
+    { value: '10,000+', label: 'Active Users', icon: Users },
+    { value: '500+', label: 'Events Hosted', icon: Building2 },
+    { value: '50,000+', label: 'Connections Made', icon: Calendar },
+    { value: '95%', label: 'ROI Increase', icon: TrendingUp },
   ];
 
-  const attendeeFeatures = [
-    'Easy networking',
-    'Connect with exhibitors',
-    'Save interactions',
-    'Build your professional network',
+  const features = [
+    {
+      icon: QrCode,
+      title: 'QR Code Scanning',
+      description: 'Instant contact exchange with secure QR technology.'
+    },
+    {
+      icon: Scan,
+      title: 'Business Card Scanner',
+      description: 'AI-powered digitization of business cards.'
+    },
+    {
+      icon: FileText,
+      title: 'Manual Contact Creation',
+      description: 'Intuitive interface for adding contacts manually.'
+    },
+    {
+      icon: Users,
+      title: 'Attendee Management',
+      description: 'Track interactions and manage attendee data.'
+    },
+    {
+      icon: Calendar,
+      title: 'Event Calendar',
+      description: 'Organize and schedule your events seamlessly.'
+    },
+    {
+      icon: BarChart3,
+      title: 'Analytics & Insights',
+      description: 'Comprehensive reports on your networking success.'
+    },
   ];
 
-  // Staggered animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.15,
-        delayChildren: 0.2,
-      },
+  const benefits = [
+    {
+      icon: Zap,
+      title: 'Instant Connections',
+      description: 'Connect with professionals in seconds.'
     },
+    {
+      icon: Shield,
+      title: 'Secure & Private',
+      description: 'Your data is protected with encryption.'
+    },
+    {
+      icon: Award,
+      title: 'Better Lead Quality',
+      description: 'Focus on high-value business opportunities.'
+    },
+    {
+      icon: Clock,
+      title: 'Save Time',
+      description: 'Automate networking and follow-ups.'
+    },
+    {
+      icon: Globe,
+      title: 'Global Networking',
+      description: 'Connect across borders and industries.'
+    },
+    {
+      icon: Star,
+      title: 'Professional Image',
+      description: 'Present yourself as a modern professional.'
+    },
+  ];
+
+  const pricingTiers = [
+    {
+      name: 'Independent Exhibitor',
+      description: 'Perfect for individual exhibitors',
+      subtitle: 'For Solo exhibitors who need simple QR code scanning and contact management without advanced features.',
+      price: '$49',
+      period: '/event',
+      features: [
+        'Unique QR Code for contacts',
+        'Business card scanner access',
+        'Contact management dashboard',
+        'Basic analytics',
+        'Email support',
+        '+2 more features'
+      ],
+      cta: 'Get Started',
+      variant: 'outline'
+    },
+    {
+      name: 'Independent Attendee',
+      description: 'For individual event attendees',
+      subtitle: 'For Event attendees who want to collect exhibitor contacts and organize leads at trade shows.',
+      price: '$19',
+      period: '/event',
+      features: [
+        'Personal QR code',
+        'Exhibitor contact saving',
+        'Contact organization',
+        'Event directory access',
+        'Basic networking tools',
+        '+2 more features'
+      ],
+      cta: 'Get Started',
+      variant: 'outline'
+    },
+    {
+      name: 'Trade Show Support Exhibitor',
+      description: 'Full support for exhibitors',
+      subtitle: 'For Enterprise exhibitor teams needing advanced analytics, team collaboration, and dedicated support for complex trade show campaigns.',
+      price: '$199',
+      period: '/event',
+      features: [
+        'Everything in Independent Exhibitor',
+        'Priority support (phone + email)',
+        'Advanced analytics & reports',
+        'Team member accounts (up to 5)',
+        'Custom branding options',
+        '+5 more features'
+      ],
+      cta: 'Get Started',
+      popular: true,
+      savingsText: 'Save 30% vs. monthly',
+      variant: 'default'
+    },
+    {
+      name: 'Trade Show Support Attendee',
+      description: 'Enhanced experience for attendees',
+      subtitle: 'For Professional attendees and corporate buyers who need advanced meeting scheduling, insights, and follow-up tools for maximum trade show ROI.',
+      price: '$79',
+      period: '/event',
+      features: [
+        'Everything in Independent Attendee',
+        'Priority support (phone + email)',
+        'Advanced contact filtering',
+        'Meeting scheduler with exhibitors',
+        'Personalized event schedule',
+        '+4 more features'
+      ],
+      cta: 'Get Started',
+      variant: 'outline'
+    }
+  ];
+
+  // Animated counter hook
+  const useAnimatedCounter = (end: number, duration: number = 2000) => {
+    const [count, setCount] = useState(0);
+
+    useEffect(() => {
+      let startTime: number;
+      let animationFrame: number;
+
+      const animate = (currentTime: number) => {
+        if (!startTime) startTime = currentTime;
+        const progress = Math.min((currentTime - startTime) / duration, 1);
+        setCount(Math.floor(progress * end));
+
+        if (progress < 1) {
+          animationFrame = requestAnimationFrame(animate);
+        }
+      };
+
+      animationFrame = requestAnimationFrame(animate);
+
+      return () => {
+        if (animationFrame) {
+          cancelAnimationFrame(animationFrame);
+        }
+      };
+    }, [end, duration]);
+
+    return count;
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        type: 'spring' as const,
-        stiffness: 100,
-        damping: 15,
-      },
-    },
-  };
+  const AnimatedCounter = ({ value, suffix = '' }: { value: string, suffix?: string }) => {
+    const numericValue = parseInt(value.replace(/[^\d]/g, ''));
+    const animatedValue = useAnimatedCounter(numericValue);
 
-  const sectionVariants = {
-    hidden: { opacity: 0, y: 60 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.8,
-        ease: [0.23, 1, 0.320, 1] as const,
-      },
-    },
-  };
-
-  const featureVariants = {
-    hidden: { opacity: 0, x: -30 },
-    visible: (i: number) => ({
-      opacity: 1,
-      x: 0,
-      transition: {
-        delay: i * 0.12,
-        duration: 0.6,
-        ease: [0.34, 1.56, 0.64, 1] as const,
-      },
-    }),
-    hover: {
-      x: 8,
-      transition: { duration: 0.3 },
-    },
-  };
-
-  const imageVariants = {
-    hidden: { opacity: 0, scale: 0.85, rotateY: -15 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      rotateY: 0,
-      transition: {
-        duration: 0.9,
-        ease: [0.23, 1, 0.320, 1] as const,
-      },
-    },
-    hover: {
-      y: -10,
-      transition: { duration: 0.4, ease: 'easeInOut' as const },
-    },
-  };
-
-  const badgeVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: { duration: 0.5 },
-    },
-    hover: {
-      scale: 1.05,
-      transition: { duration: 0.2 },
-    },
-  };
-
-  const headingVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.7, ease: [0.23, 1, 0.320, 1] as const },
-    },
-  };
-
-  const textVariants = {
-    hidden: { opacity: 0, y: 15 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6, ease: 'easeOut' as const },
-    },
+    return <span>{animatedValue.toLocaleString()}{suffix}</span>;
   };
 
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Animated Background */}
       <div className="fixed inset-0 -z-10">
         <div className="absolute inset-0 gradient-hero" />
@@ -153,380 +252,595 @@ export default function Landing() {
         />
       </div>
 
-      {/* Header */}
-      <motion.header
+      {/* Navbar */}
+      <motion.nav
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-b border-amber-200/30 shadow-lg"
+        transition={{ duration: 0.6 }}
+        className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border shadow-lg"
       >
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Logo size="md" showTagline />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-            className="flex items-center gap-2 text-sm font-medium text-amber-600"
+
+          {/* Desktop Menu */}
+          <div className="hidden md:flex items-center space-x-8">
+            <button onClick={() => scrollToSection('features')} className="text-foreground/80 hover:text-primary transition-colors">
+              Features
+            </button>
+            <button onClick={() => scrollToSection('how-it-works')} className="text-foreground/80 hover:text-primary transition-colors">
+              How It Works
+            </button>
+            <button onClick={() => scrollToSection('benefits')} className="text-foreground/80 hover:text-primary transition-colors">
+              Benefits
+            </button>
+            <button onClick={() => scrollToSection('pricing')} className="text-foreground/80 hover:text-primary transition-colors">
+              Pricing
+            </button>
+            <Button onClick={() => navigate('/login')} className="ml-4 text-gray-700" style={{ background: 'linear-gradient(108.18deg, #EBCB42 0%, #FFEC99 50.7%, #EBCB42 97.5%)' }}>
+              Get Started
+            </Button>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            <Sparkles className="h-4 w-4 text-amber-500" />
-            <span className="hidden sm:inline">Smart Networking</span>
-          </motion.div>
+            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
-      </motion.header>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden bg-background border-t border-border"
+          >
+            <div className="container mx-auto px-4 py-4 space-y-4">
+              <button onClick={() => scrollToSection('features')} className="block w-full text-left text-foreground/80 hover:text-primary transition-colors">
+                Features
+              </button>
+              <button onClick={() => scrollToSection('how-it-works')} className="block w-full text-left text-foreground/80 hover:text-primary transition-colors">
+                How It Works
+              </button>
+              <button onClick={() => scrollToSection('benefits')} className="block w-full text-left text-foreground/80 hover:text-primary transition-colors">
+                Benefits
+              </button>
+              <button onClick={() => scrollToSection('pricing')} className="block w-full text-left text-foreground/80 hover:text-primary transition-colors">
+                Pricing
+              </button>
+              <Button onClick={() => navigate('/login')} className="w-full text-gray-700" style={{ background: 'linear-gradient(108.18deg, #EBCB42 0%, #FFEC99 50.7%, #EBCB42 97.5%)' }}>
+                Get Started
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </motion.nav>
 
       {/* Hero Section */}
-      <main className="pt-28 pb-20 px-4">
-        <motion.div
-          className="container mx-auto max-w-5xl"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Hero Text */}
-          <div className="text-center mb-20 space-y-6">
-            <motion.div
-              variants={itemVariants}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/40 border border-amber-300/60 dark:border-amber-600/40 mb-6 shadow-sm"
-            >
-              <Zap className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">Event Networking Reimagined</span>
-            </motion.div>
-
-            <motion.h1
-              variants={itemVariants}
-              className="text-3xl sm:text-5xl md:text-3xl font-extrabold text-foreground mb-6 leading-tight tracking-tight drop-shadow-md"
-            >
-              Smart networking for{' '}
-              <span className="relative inline-block">
-                <span 
-                  className="bg-clip-text text-transparent text-3xl md:text-3xl font-semibold"
-                  style={{ 
-                    backgroundImage: 'linear-gradient(90deg, #374151 0%, #6B7280 50%, #9CA3AF 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >
-                  modern events
-                </span>
-                <motion.span
-                  className="absolute -bottom-2 left-1/6 right-1/6 h-0.5 rounded-full"
-                  style={{ 
-                    backgroundImage: 'linear-gradient(90deg, #E5E7EB 0%, #D1D5DB 50%, #9CA3AF 100%)'
-                  }}
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ delay: 0.8, duration: 0.6, ease: 'easeOut' }}
-                />
-              </span>
-            </motion.h1>
-
-            <motion.p
-              variants={itemVariants}
-              className="text-lg md:text-xl text-foreground max-w-2xl mx-auto leading-relaxed font-medium"
-            >
-              Capture leads, build meaningful connections, and follow up effortlessly.
-              <span className="block mt-2 text-foreground/85">All in one powerful platform.</span>
-            </motion.p>
-
-            {/* Stats or Trust Indicators */}
-            <motion.div
-              variants={itemVariants}
-              className="flex flex-wrap justify-center gap-6 md:gap-12 mt-12 px-4"
-            >
-              {[
-                { value: '10K+', label: 'Leads Captured' },
-                { value: '500+', label: 'Events' },
-                { value: '98%', label: 'Satisfaction' },
-              ].map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  className="text-center px-6 py-4 rounded-lg bg-gradient-to-br from-amber-50/50 to-yellow-50/50 dark:from-amber-900/20 dark:to-yellow-900/20 border border-amber-200/40 dark:border-amber-700/40 backdrop-blur-sm"
-                  whileHover={{ scale: 1.08, y: -4 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                >
-                  <div className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent">{stat.value}</div>
-                  <div className="text-sm font-medium text-foreground/75 mt-1">{stat.label}</div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-
-          {/* Professional Sections Layout */}
+      <section className="relative min-h-screen flex items-center justify-center px-4 pt-16 overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 flex items-center justify-center">
           <motion.div
-            variants={itemVariants}
-            className="space-y-16 max-w-5xl mx-auto"
+            className="absolute w-full h-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1 }}
           >
-            {/* Exhibitors Section */}
-            <motion.section
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-100px" }}
-              variants={sectionVariants}
-              className="grid md:grid-cols-2 gap-10 lg:gap-16 items-center py-6"
-            >
-              <div className="space-y-6 order-2 md:order-1">
-                <motion.div 
-                  variants={badgeVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  whileHover="hover"
-                  viewport={{ once: true }}
-                  className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-100 to-amber-50 dark:from-amber-900/40 dark:to-amber-800/30 border border-amber-300/60 dark:border-amber-700/50 w-fit cursor-default shadow-sm font-bold"
-                >
-                  <Briefcase className="h-5 w-5 text-amber-700 dark:text-amber-300" />
-                  <span className="text-sm font-bold text-amber-700 dark:text-amber-300">FOR EXHIBITORS</span>
-                </motion.div>
-                
-                <motion.h2 
-                  variants={headingVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                  className="text-3xl md:text-5xl font-extrabold text-foreground leading-tight"
-                >
-                  Maximize Your Lead Capture at Every Event
-                </motion.h2>
-
-                <motion.p 
-                  variants={textVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                  className="text-lg md:text-xl text-foreground/80 leading-relaxed font-medium"
-                >
-                  Transform your booth experience with our intelligent lead capture technology. Effortlessly connect with attendees through QR codes, QR scanning, and real-time data insights. Every interaction is recorded, organized, and ready for follow-up.
-                </motion.p>
-
-                <div className="space-y-4 pt-6">
-                  {exhibitorFeatures.map((feature, index) => (
-                    <motion.div
-                      key={index}
-                      custom={index}
-                      initial="hidden"
-                      whileInView="visible"
-                      whileHover="hover"
-                      viewport={{ once: true }}
-                      variants={featureVariants}
-                      className="flex items-start gap-4 cursor-default p-3 rounded-lg hover:bg-amber-50/50 dark:hover:bg-amber-900/20 transition-colors"
-                    >
-                      <motion.div 
-                        className="flex-shrink-0 mt-1"
-                        whileHover={{ scale: 1.25, rotate: 12 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <div className="flex items-center justify-center h-6 w-6 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 dark:from-amber-400 dark:to-amber-500 shadow-md">
-                          <Sparkles className="h-3.5 w-3.5 text-white" />
-                        </div>
-                      </motion.div>
-                      <div>
-                        <p className="font-semibold text-foreground text-base">{feature}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-
-                <motion.button
-                  onClick={() => navigate('/login?role=exhibitor')}
-                  whileHover={{ scale: 1.06, y: -3 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={{ duration: 0.2 }}
-                  className="mt-8 inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-gray-800 dark:text-gray-100 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-200 dark:from-amber-700 dark:via-amber-600 dark:to-amber-500 hover:from-amber-300 hover:via-amber-200 hover:to-yellow-100 transition-all duration-300 shadow-lg hover:shadow-2xl border border-amber-200/50 dark:border-amber-600/50"
-                >
-                  Get Started as Exhibitor
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <ArrowRight className="h-5 w-5 text-current" />
-                  </motion.div>
-                </motion.button>
-              </div>
-
-              <motion.div
-                initial="hidden"
-                whileInView="visible"
-                whileHover="hover"
-                viewport={{ once: true }}
-                variants={imageVariants}
-                style={{ perspective: 1000 }}
-                className="order-1 md:order-2"
-              >
-                <motion.div 
-                  className="relative h-80 md:h-96 rounded-xl overflow-hidden shadow-2xl bg-gradient-to-br from-amber-100 to-yellow-50 dark:from-amber-950/50 dark:to-amber-900/30 border border-amber-200/30 dark:border-amber-800/30"
-                  whileHover={{ boxShadow: "0 25px 50px rgba(251, 191, 36, 0.2)" }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <motion.div 
-                    className="absolute inset-0 flex items-center justify-center"
-                    animate={{ y: [0, 10, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <div className="text-center space-y-4">
-                      <Briefcase className="h-24 w-24 text-amber-300 dark:text-amber-700 mx-auto opacity-50" />
-                      <p className="text-muted-foreground font-medium">Professional Lead Management</p>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              </motion.div>
-            </motion.section>
-
-            {/* Divider */}
-            <motion.div
-              initial={{ opacity: 0, scaleX: 0 }}
-              whileInView={{ opacity: 1, scaleX: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="h-px bg-gradient-to-r from-transparent via-border to-transparent my-4"
-            />
-
-            {/* Attendees Section */}
-            <motion.section
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-100px" }}
-              variants={sectionVariants}
-              className="grid md:grid-cols-2 gap-10 lg:gap-16 items-center py-6"
-            >
-              <motion.div
-                initial="hidden"
-                whileInView="visible"
-                whileHover="hover"
-                viewport={{ once: true }}
-                variants={imageVariants}
-                style={{ perspective: 1000 }}
-              >
-                <motion.div 
-                  className="relative h-80 md:h-96 rounded-xl overflow-hidden shadow-2xl bg-gradient-to-br from-yellow-100 to-amber-50 dark:from-yellow-950/50 dark:to-yellow-900/30 border border-yellow-200/30 dark:border-yellow-800/30"
-                  whileHover={{ boxShadow: "0 25px 50px rgba(251, 191, 36, 0.2)" }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <motion.div 
-                    className="absolute inset-0 flex items-center justify-center"
-                    animate={{ y: [0, 10, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <div className="text-center space-y-4">
-                      <Users className="h-24 w-24 text-yellow-300 dark:text-yellow-700 mx-auto opacity-50" />
-                      <p className="text-muted-foreground font-medium">Smart Networking</p>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              </motion.div>
-
-              <div className="space-y-6">
-                <motion.div 
-                  variants={badgeVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  whileHover="hover"
-                  viewport={{ once: true }}
-                  className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gradient-to-r from-yellow-100 to-yellow-50 dark:from-yellow-900/40 dark:to-yellow-800/30 border border-yellow-300/60 dark:border-yellow-700/50 w-fit cursor-default shadow-sm"
-                >
-                  <Users className="h-5 w-5 text-yellow-700 dark:text-yellow-300" />
-                  <span className="text-sm font-bold text-yellow-700 dark:text-yellow-300">FOR ATTENDEES</span>
-                </motion.div>
-                
-                <motion.h2 
-                  variants={headingVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                  className="text-3xl md:text-5xl font-extrabold text-foreground leading-tight"
-                >
-                  Build Meaningful Professional Connections
-                </motion.h2>
-
-                <motion.p 
-                  variants={textVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                  className="text-lg md:text-xl text-foreground/80 leading-relaxed font-medium"
-                >
-                  Navigate events with confidence and purpose. Discover exhibitors aligned with your interests, connect seamlessly, and build a professional network that lasts. Every connection is saved and organized for easy follow-up and future collaboration.
-                </motion.p>
-
-                <div className="space-y-4 pt-6">
-                  {attendeeFeatures.map((feature, index) => (
-                    <motion.div
-                      key={index}
-                      custom={index}
-                      initial="hidden"
-                      whileInView="visible"
-                      whileHover="hover"
-                      viewport={{ once: true }}
-                      variants={featureVariants}
-                      className="flex items-start gap-4 cursor-default p-3 rounded-lg hover:bg-yellow-50/50 dark:hover:bg-yellow-900/20 transition-colors"
-                    >
-                      <motion.div 
-                        className="flex-shrink-0 mt-1"
-                        whileHover={{ scale: 1.25, rotate: 12 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <div className="flex items-center justify-center h-6 w-6 rounded-full bg-gradient-to-br from-yellow-500 to-yellow-600 dark:from-yellow-400 dark:to-yellow-500 shadow-md">
-                          <Sparkles className="h-3.5 w-3.5 text-white" />
-                        </div>
-                      </motion.div>
-                      <div>
-                        <p className="font-semibold text-foreground text-base">{feature}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-
-                <motion.button
-                  onClick={() => navigate('/login?role=attendee')}
-                  whileHover={{ scale: 1.06, y: -3 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={{ duration: 0.2 }}
-                  className="mt-8 inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-gray-800 dark:text-gray-100 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-200 dark:from-amber-700 dark:via-amber-600 dark:to-amber-500 hover:from-amber-300 hover:via-amber-200 hover:to-yellow-100 transition-all duration-300 shadow-lg hover:shadow-2xl border border-amber-200/50 dark:border-amber-600/50"
-                >
-                  Join as Attendee
-                  <motion.div
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <ArrowRight className="h-5 w-5 text-current" />
-                  </motion.div>
-                </motion.button>
-              </div>
-            </motion.section>
+            <QrCode className="absolute top-20 right-10 h-32 w-32 text-primary/10 -rotate-12 opacity-40" />
+            <QrCode className="absolute bottom-32 left-5 h-40 w-40 text-secondary/10 rotate-45 opacity-30" />
+          </motion.div>
+        </div>
+        
+        <div className="container mx-auto max-w-5xl text-center relative z-10">
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary/25 to-secondary/25 border border-primary/50 mb-10 backdrop-blur-sm hover:border-primary/70 transition-all hover:from-primary/35 hover:to-secondary/35 shadow-sm"
+          >
+            <Sparkles className="h-5 w-5 text-primary animate-pulse flex-shrink-0" />
+            <span className="text-sm font-bold text-foreground">
+              ✨ The Smart Way to Network at Events
+            </span>
           </motion.div>
 
-          {/* Bottom CTA */}
-          <motion.div
-            variants={itemVariants}
-            className="text-center mt-12"
+          {/* Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="text-5xl md:text-7xl font-extrabold leading-tight mb-6 tracking-tight"
           >
-            <motion.button
-              onClick={() => navigate('/login')}
-              className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-gray-800 dark:text-gray-100 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-200 dark:from-amber-700 dark:via-amber-600 dark:to-amber-500 hover:from-amber-300 hover:via-amber-200 hover:to-yellow-100 transition-all duration-300 shadow-md hover:shadow-lg border border-amber-200/60 dark:border-amber-600/40"
-              whileHover={{ x: 5, y: -2 }}
-              whileTap={{ scale: 0.96 }}
-            >
-              Already have an account? Sign in
-              <ArrowRight className="h-5 w-5 text-current group-hover:translate-x-1 transition-transform" />
-            </motion.button>
-          </motion.div>
-        </motion.div>
-      </main>
+            Transform Trade Shows Into{' '}
+            <span className="relative inline-block">
+              Powerful Networks
+              <motion.div
+                className="absolute -bottom-2 left-0 w-full h-1.5 bg-gradient-to-r from-primary via-secondary to-primary rounded-full"
+                initial={{ scaleX: 0, originX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 1, delay: 0.6 }}
+              />
+            </span>
+          </motion.h1>
 
-      {/* Footer */}
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1, duration: 0.6 }}
-        className="py-10 px-4 border-t border-amber-200/30 dark:border-amber-800/30 bg-gradient-to-b from-transparent to-amber-50/30 dark:to-amber-950/20"
-      >
-        <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-sm">
-          <span className="text-foreground/70 font-medium">© 2025 lead-Recall. All rights reserved.</span>
-          <div className="flex items-center gap-8">
-            <a href="#" className="text-foreground/60 hover:text-amber-600 dark:hover:text-amber-400 font-medium transition-colors">Privacy</a>
-            <a href="#" className="text-foreground/60 hover:text-amber-600 dark:hover:text-amber-400 font-medium transition-colors">Terms</a>
-            <a href="#" className="text-foreground/60 hover:text-amber-600 dark:hover:text-amber-400 font-medium transition-colors">Contact</a>
+          {/* Subheading */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-3"
+          >
+            Connect exhibitors and attendees seamlessly with QR technology. Build meaningful business relationships and maximize your trade show ROI.
+          </motion.p>
+
+          {/* Social Proof */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="flex flex-wrap justify-center gap-4 mb-10 text-sm"
+          >
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/40 backdrop-blur-sm border border-border/50">
+              <Check className="h-4 w-4 text-green-500" />
+              <span>50,000+ Connections Made</span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/40 backdrop-blur-sm border border-border/50">
+              <Check className="h-4 w-4 text-green-500" />
+              <span>95% Satisfaction Rate</span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/40 backdrop-blur-sm border border-border/50">
+              <Check className="h-4 w-4 text-green-500" />
+              <span>500+ Events Powered</span>
+            </div>
+          </motion.div>
+
+          {/* CTA Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+          >
+            <Button 
+              size="lg" 
+              onClick={() => navigate('/login')} 
+              className="text-lg px-8 py-6 h-auto font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-gray-700" 
+              style={{ background: 'linear-gradient(135deg, #EBCB42 0%, #FFEC99 50%, #EBCB42 100%)' }}
+            >
+              <Zap className="mr-2 h-5 w-5" />
+              Get Started
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              onClick={() => scrollToSection('features')} 
+              className="text-lg px-8 py-6 h-auto font-semibold rounded-xl border-2 hover:bg-primary/5 transition-all duration-300"
+            >
+              Learn More
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </motion.div>
+
+          {/* Additional Trust Element */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            className="mt-8 text-xs text-muted-foreground"
+          >
+            No credit card required • 14-day free trial • Cancel anytime
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-8"
+          >
+            {stats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                className="text-center"
+              >
+                <div className="flex justify-center mb-4">
+                  <stat.icon className="h-12 w-12 text-primary" />
+                </div>
+                <div className="text-4xl md:text-5xl font-bold text-foreground mb-2">
+                  <AnimatedCounter value={stat.value} />
+                </div>
+                <div className="text-muted-foreground">{stat.label}</div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold mb-6">
+              Everything You Need to Succeed at Trade Shows
+            </h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                className="p-6 rounded-lg border bg-card hover:shadow-lg transition-shadow"
+              >
+                <feature.icon className="h-12 w-12 text-primary mb-4" />
+                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                <p className="text-muted-foreground">{feature.description}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
-      </motion.footer>
+      </section>
+
+      {/* QR Showcase Section */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold mb-6">
+              See QR Networking in Action
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              Interactive demo showing QR code generation and scanning process.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8 text-center">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <QrCode className="h-16 w-16 text-primary mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Instant Sharing</h3>
+              <p className="text-muted-foreground">Share contact info instantly with QR codes</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <Zap className="h-16 w-16 text-primary mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No App Downloads</h3>
+              <p className="text-muted-foreground">Works with any QR code scanner</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <Shield className="h-16 w-16 text-primary mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Secure Encryption</h3>
+              <p className="text-muted-foreground">Your data is protected and encrypted</p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold mb-6">How It Works</h2>
+            <p className="text-xl text-muted-foreground">Simple steps to transform your networking experience</p>
+          </motion.div>
+
+          {/* Exhibitor Steps */}
+          <div className="mb-20">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-12"
+            >
+              <h3 className="text-2xl font-bold mb-4">For Exhibitors</h3>
+              <p className="text-muted-foreground">Showcase your business and connect with attendees</p>
+            </motion.div>
+            <div className="grid md:grid-cols-4 gap-8">
+              {[
+                { step: 1, title: 'Create Profile', desc: 'Set up your exhibitor profile', icon: Users },
+                { step: 2, title: 'Generate QR', desc: 'Get your unique QR code', icon: QrCode },
+                { step: 3, title: 'Scan Attendees', desc: 'Scan attendee QR codes', icon: Scan },
+                { step: 4, title: 'Manage Contacts', desc: 'Organize and follow up', icon: Users }
+              ].map((item, index) => (
+                <motion.div
+                  key={item.step}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                  className="p-6 rounded-lg border bg-card hover:shadow-lg transition-all duration-300 hover:scale-105 text-center"
+                >
+                  <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                    <item.icon className="h-8 w-8" />
+                  </div>
+                  <h4 className="text-lg font-semibold mb-2">{item.title}</h4>
+                  <p className="text-muted-foreground text-sm">{item.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Attendee Steps */}
+          <div>
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-12"
+            >
+              <h3 className="text-2xl font-bold mb-4">For Attendees</h3>
+              <p className="text-muted-foreground">Discover exhibitors and build your network</p>
+            </motion.div>
+            <div className="grid md:grid-cols-4 gap-8">
+              {[
+                { step: 1, title: 'Create Profile', desc: 'Set up your attendee profile', icon: Users },
+                { step: 2, title: 'Get QR', desc: 'Receive your personal QR code', icon: QrCode },
+                { step: 3, title: 'Scan Booths', desc: 'Scan exhibitor QR codes', icon: Scan },
+                { step: 4, title: 'Follow Up', desc: 'Connect and network', icon: Calendar }
+              ].map((item, index) => (
+                <motion.div
+                  key={item.step}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                  className="p-6 rounded-lg border bg-card hover:shadow-lg transition-all duration-300 hover:scale-105 text-center"
+                >
+                  <div className="w-16 h-16 bg-secondary/10 text-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                    <item.icon className="h-8 w-8" />
+                  </div>
+                  <h4 className="text-lg font-semibold mb-2">{item.title}</h4>
+                  <p className="text-muted-foreground text-sm">{item.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section id="benefits" className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold mb-6">Why Choose LeadRecall?</h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {benefits.map((benefit, index) => (
+              <motion.div
+                key={benefit.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                className="p-6 rounded-lg border bg-card hover:shadow-lg transition-shadow"
+              >
+                <benefit.icon className="h-12 w-12 text-primary mb-4" />
+                <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
+                <p className="text-muted-foreground">{benefit.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold mb-6">Choose Your Plan</h2>
+            <p className="text-xl text-muted-foreground">Flexible pricing for every networking need</p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {pricingTiers.map((tier, index) => (
+              <motion.div
+                key={tier.name}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                className={`relative rounded-2xl overflow-hidden border transition-all duration-300 ${
+                  tier.popular
+                    ? 'border-0 shadow-2xl lg:scale-105 lg:z-10'
+                    : 'border-border bg-card shadow-md hover:shadow-lg'
+                }`}
+              >
+                {/* Gradient Background for Popular */}
+                {tier.popular && (
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-200 via-yellow-400 opacity-95 text-black" />
+                )}
+                
+                {/* Card Content */}
+                <div className={`relative p-5 h-full flex flex-col ${tier.popular ? 'bg-opacity-0' : ''}`}>
+                  {/* Popular Badge */}
+                  {tier.popular && (
+                    <div className="mb-4">
+                      <span className="inline-flex items-center gap-1 bg-black/20 backdrop-blur-sm text-black px-3 py-1 rounded-full text-xs font-bold">
+                        <Star className="h-3.5 w-3.5 fill-current" /> Popular
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Title and Description */}
+                  <div className="mb-3">
+                    <h3 className={`text-xl font-bold mb-1 ${tier.popular ? 'text-black' : 'text-foreground'}`}>
+                      {tier.name}
+                    </h3>
+                    <p className={`text-sm mb-2 ${tier.popular ? 'text-gray-800' : 'text-muted-foreground'}`}>
+                      {tier.description}
+                    </p>
+                    <p className={`text-xs leading-relaxed ${tier.popular ? 'text-gray-700' : 'text-muted-foreground'}`}>
+                      {tier.subtitle}
+                    </p>
+                  </div>
+
+                  {/* Pricing */}
+                  <div className="mb-4">
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-4xl font-bold ${tier.popular ? 'text-black' : 'text-foreground'}`}>
+                        {tier.price}
+                      </span>
+                      <span className={`text-sm font-medium ${tier.popular ? 'text-gray-800' : 'text-muted-foreground'}`}>
+                        {tier.period}
+                      </span>
+                    </div>
+                    {tier.savingsText && (
+                      <p className="text-xs text-grey-400 mt-2">
+                        📊 {tier.savingsText}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Features */}
+                  <div className="mb-5 flex-grow">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className={`h-4 w-4 ${tier.popular ? 'text-white/80' : 'text-muted-foreground'}`} />
+                      <span className={`text-xs font-bold uppercase tracking-wide ${tier.popular ? 'text-gray-800' : 'text-muted-foreground'}`}>
+                        Includes
+                      </span>
+                    </div>
+                    <ul className="space-y-2.5">
+                      {tier.features.map((feature, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <Check className={`h-4 w-4 flex-shrink-0 mt-1 ${tier.popular ? 'text-white/90' : 'text-green-500'}`} />
+                          <span className={`text-sm ${tier.popular ? 'text-gray-900' : 'text-foreground'}`}>
+                            {feature}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* CTA Buttons */}
+                  <div className="space-y-3">
+                    <Button
+                      className={`w-full font-bold py-3 rounded-xl ${
+                        tier.popular
+                          ? 'bg-white text-blue-700 hover:bg-white/90 shadow-lg'
+                          : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      }`}
+                      onClick={() => navigate('/login')}
+                    >
+                      <Zap className="h-4 w-4" />
+                      {tier.cta}
+                    </Button>
+                    <button
+                      className={`w-full text-sm font-medium py-2 rounded-lg transition-colors ${
+                        tier.popular
+                          ? 'text-gray-800 hover:text-gray-900 border border-gray-300 hover:border-gray-400'
+                          : 'text-foreground/60 hover:text-foreground border border-border hover:border-foreground/30'
+                      }`}
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12 px-4 border-t bg-muted/20">
+        <div className="container mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <Logo size="md" showTagline />
+              <p className="text-muted-foreground mt-4">
+                Transform trade shows into powerful networks with QR technology.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Product</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><button onClick={() => scrollToSection('features')}>Features</button></li>
+                <li><button onClick={() => scrollToSection('pricing')}>Pricing</button></li>
+                <li><button onClick={() => scrollToSection('how-it-works')}>How It Works</button></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><a href="#">About</a></li>
+                <li><a href="#">Blog</a></li>
+                <li><a href="#">Careers</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><a href="#">Help Center</a></li>
+                <li><a href="#">Privacy</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t pt-8 text-center text-muted-foreground">
+            <p>&copy; 2025 LeadRecall. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
