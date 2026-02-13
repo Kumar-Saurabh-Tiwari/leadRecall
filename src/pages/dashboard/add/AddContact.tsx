@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, User, Building2, Calendar, FileText, Loader2, UserPlus } from 'lucide-react';
+import { ArrowLeft, User, Building2, Calendar, FileText, Loader2, UserPlus, Image as ImageIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEvents } from '@/contexts/EventContext';
 import { useToast } from '@/hooks/use-toast';
 import { entryService } from '@/services/entryService';
+import { exhibitorService } from '@/services/exhibitorService';
+import { attendeeService } from '@/services/attendeeService';
+import { MediaUploadDialog } from '@/components/dashboard/MediaUploadDialog';
 import { UserRole } from '@/types';
 
 interface LocationState {
@@ -66,6 +69,8 @@ export default function AddContact() {
   const { toast } = useToast();
   
   const [isLoading, setIsLoading] = useState(false);
+  const [showMediaDialog, setShowMediaDialog] = useState(false);
+  const [mediaDialogInitialized, setMediaDialogInitialized] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -129,7 +134,13 @@ export default function AddContact() {
       setSelectedEventData(state.selectedEvent);
       setEvent(state.selectedEvent.eventName);
     }
-  }, [location.state]);
+
+    // Show media upload dialog if mediaUrl is not already set (not from OCR)
+    if (!state?.mediaUrl && !mediaDialogInitialized) {
+      setShowMediaDialog(true);
+      setMediaDialogInitialized(true);
+    }
+  }, [location.state, mediaDialogInitialized]);
 
   // Attendees add Exhibitors, Exhibitors add Attendees
   const targetType: UserRole = user?.role === 'exhibitor' ? 'attendee' : 'exhibitor';
@@ -142,6 +153,27 @@ export default function AddContact() {
     const processId = Math.floor(Math.random() * 0xffff).toString(16).padStart(4, '0');
     const counter = Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
     return timestamp + machineId + processId + counter;
+  };
+
+  // Get the appropriate service based on user role
+  const getMediaUploadService = () => {
+    return user?.role === 'exhibitor' ? exhibitorService : attendeeService;
+  };
+
+  // Handle media upload from dialog
+  const handleMediaUpload = (uploadedMediaUrl: string) => {
+    console.log('Media uploaded, URL:', uploadedMediaUrl);
+    setMediaUrl(uploadedMediaUrl);
+    setShowMediaDialog(false);
+    toast({
+      title: 'Photo added',
+      description: 'You can now fill in the contact details.',
+    });
+  };
+
+  // Remove media
+  const removeMedia = () => {
+    setMediaUrl('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -204,7 +236,7 @@ export default function AddContact() {
         sExhibitorEmail: user?.role === 'exhibitor' ? user.email || '' : '',
         bOcrScan: scannedViaOCR || false,
         bMediaScan: false,
-        sMediaUrl: scannedViaOCR ? mediaUrl : '',
+        sMediaUrl: mediaUrl || '',
         entryType: user?.role || 'manual',
         sAttendeeId: user?.role === 'attendee' ? user.id || '' : '',
         sAttendeeEmail: user?.role === 'attendee' ? user.email || '' : '',
@@ -301,6 +333,41 @@ export default function AddContact() {
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Media Upload Section */}
+            <div className="mb-6 pb-6 border-b border-border/50">
+              <Label className="block mb-3 font-semibold">Contact Photo</Label>
+              {mediaUrl ? (
+                <div className="relative w-full h-40 rounded-lg overflow-hidden border-2 border-border bg-secondary/30">
+                  <img
+                    src={mediaUrl}
+                    alt="Contact"
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeMedia}
+                    className="absolute top-2 right-2 h-8 w-8 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90 transition-colors shadow-md"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowMediaDialog(true)}
+                  className="w-full h-40 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-3 hover:bg-secondary/30 transition-colors cursor-pointer"
+                >
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <ImageIcon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-foreground">Add contact photo</p>
+                    <p className="text-xs text-muted-foreground">Click to take or upload a photo</p>
+                  </div>
+                </button>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="contact-first-name">First Name</Label>
@@ -473,6 +540,16 @@ export default function AddContact() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Media Upload Dialog */}
+      <MediaUploadDialog
+        open={showMediaDialog}
+        onClose={() => setShowMediaDialog(false)}
+        onMediaUpload={handleMediaUpload}
+        title="Add Contact Photo"
+        description="Take a photo with your camera or upload one from your device"
+        getDirectURL={getMediaUploadService().getDirectURL.bind(getMediaUploadService())}
+      />
     </motion.div>
   );
 }
