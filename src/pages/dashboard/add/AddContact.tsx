@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { entryService } from '@/services/entryService';
 import { exhibitorService } from '@/services/exhibitorService';
 import { attendeeService } from '@/services/attendeeService';
+import { aiAnalyzeService } from '@/services/aiAnalyzeService';
 import { MediaUploadDialog } from '@/components/dashboard/MediaUploadDialog';
 import { UserRole } from '@/types';
 
@@ -225,6 +226,27 @@ export default function AddContact() {
       
       console.log('Creating contact with structured data:', contactDetails);
       
+      // Call AI analysis service to enrich profile data
+      let profileAnalyzeData = {};
+      try {
+        const aiData = {
+          name: `${firstName.trim()} ${lastName.trim()}`,
+          email: email.trim() || '',
+          company: company.trim(),
+          designation: designation.trim() || '',
+          linkedinUrl: linkedinUrl.trim() || ''
+        };
+        
+        console.log('Sending data to AI analysis service:', aiData);
+        const aiResponse = await aiAnalyzeService.aiAnalizeProfile(aiData);
+        profileAnalyzeData = aiResponse?.data || {};
+        console.log('AI Profile Analysis Response:', profileAnalyzeData);
+      } catch (aiError) {
+        // Log error but continue with contact creation
+        console.warn('AI analysis failed, continuing without enriched profile data:', aiError);
+        profileAnalyzeData = {};
+      }
+      
       // Generate a unique ID for the entry (MongoDB ObjectId format)
       const entryId = generateObjectId();
       
@@ -241,6 +263,7 @@ export default function AddContact() {
         sAttendeeId: user?.role === 'attendee' ? user.id || '' : '',
         sAttendeeEmail: user?.role === 'attendee' ? user.email || '' : '',
         oContactData: contactDetails,
+        oProfileAnalyzeData: profileAnalyzeData,
         eMediaType: 'dataset',
         eRecordType: "contact",
         dCreatedDate: (new Date()).toISOString(),
@@ -271,14 +294,18 @@ export default function AddContact() {
         linkedin: linkedinUrl.trim() || undefined,
       };
       
-      entryService.add(entryData);
+      // Add entry to local service including image
+      const newEntry = entryService.add({
+        ...entryData,
+        image: mediaUrl || undefined
+      });
 
       toast({
         title: `${targetLabel} added!`,
         description: `${firstName} ${lastName} has been added to your leads.`,
       });
       
-      // Refresh entries to show updated list
+      // Refresh entries to show updated list with proper image handling
       refreshEntries();
       
       navigate('/dashboard');
@@ -337,7 +364,7 @@ export default function AddContact() {
             <div className="mb-6 pb-6 border-b border-border/50">
               <Label className="block mb-3 font-semibold">Contact Photo</Label>
               {mediaUrl ? (
-                <div className="relative w-full h-40 rounded-lg overflow-hidden border-2 border-border bg-secondary/30">
+                <div className="relative w-40 h-40 rounded-lg overflow-hidden border-2 border-border bg-secondary/30">
                   <img
                     src={mediaUrl}
                     alt="Contact"

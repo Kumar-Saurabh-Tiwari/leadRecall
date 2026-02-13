@@ -136,7 +136,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
             phone: item.oContactData?.contacts?.[0]?.sContactNumber || undefined,
             linkedin: linkedinProfile?.sProfileLink || undefined,
             profileUrl: undefined,
-            image: undefined
+            image: item?.sMediaUrl && item?.sMediaUrl !== 'No Image' ? item?.sMediaUrl : undefined
           };
         });
 

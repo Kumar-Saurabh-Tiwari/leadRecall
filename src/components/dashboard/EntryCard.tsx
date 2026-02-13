@@ -5,6 +5,7 @@ import { Entry } from '@/types';
 import { format } from 'date-fns';
 import { Building2, Calendar, User, Mail, Phone, Linkedin, ChevronRight, MapPin } from 'lucide-react';
 import { forwardRef } from 'react';
+import { SafeImage } from '@/components/SafeImage';
 
 interface EntryCardProps {
   entry: Entry;
@@ -32,10 +33,11 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
           {/* Image Section - High quality portrait */}
           <div className="w-full h-56 bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700/50 flex items-center justify-center overflow-hidden relative">
             {entry.image ? (
-              <img 
+              <SafeImage 
                 src={entry.image} 
                 alt={entry.name}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                fallbackClassName="group-hover:scale-110 transition-transform duration-500"
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-100 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center">
@@ -133,10 +135,11 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
           {/* Top Image Section - Portrait aspect */}
           <div className="relative w-full aspect-[4/3] bg-muted/20 flex-shrink-0 flex items-center justify-center overflow-hidden">
             {entry.image ? (
-              <img 
+              <SafeImage 
                 src={entry.image} 
                 alt={entry.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                fallbackClassName="group-hover:scale-105 transition-transform duration-500"
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-slate-800 dark:to-slate-700/50 flex items-center justify-center">
@@ -203,10 +206,11 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
             {/* Left Column - Image Section */}
             <div className="relative w-28 h-28 flex-shrink-0">
               {entry.image ? (
-                <img 
+                <SafeImage 
                   src={entry.image} 
                   alt={entry.name}
                   className="h-full w-full object-cover rounded-2xl"
+                  fallbackClassName="rounded-2xl"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-amber-50 to-amber-100 dark:from-slate-800 dark:to-slate-700/50 rounded-2xl flex items-center justify-center">
@@ -308,10 +312,11 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
             {/* Small Image */}
             {entry.image ? (
               <div className="relative w-full h-32 bg-muted rounded-lg flex items-center justify-center overflow-hidden mb-3">
-                <img 
+                <SafeImage 
                   src={entry.image} 
                   alt={entry.name}
                   className="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                  fallbackClassName="group-hover:scale-105 transition-transform duration-300 rounded-lg"
                 />
               </div>
             ) : (
