@@ -398,7 +398,6 @@ export function MediaUploadDialog({
             accept="image/*"
             onChange={handleFileSelect}
             className="hidden"
-            capture="environment"
           />
         </div>
       </DialogContent>
