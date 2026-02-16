@@ -29,6 +29,15 @@ import { Button } from '@/components/ui/button';
 export default function Landing() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -184,16 +193,29 @@ export default function Landing() {
     }
   ];
 
-  // Animated counter hook
+  // Animated counter hook - optimized for performance
   const useAnimatedCounter = (end: number, duration: number = 2000) => {
     const [count, setCount] = useState(0);
+    const [hasStarted, setHasStarted] = useState(false);
 
     useEffect(() => {
+      if (!hasStarted) return;
+      
       let startTime: number;
       let animationFrame: number;
+      const frameInterval = 1000 / 60; // 60fps
+      let lastUpdate = 0;
 
       const animate = (currentTime: number) => {
         if (!startTime) startTime = currentTime;
+        
+        // Throttle updates to 60fps
+        if (currentTime - lastUpdate < frameInterval) {
+          animationFrame = requestAnimationFrame(animate);
+          return;
+        }
+        lastUpdate = currentTime;
+        
         const progress = Math.min((currentTime - startTime) / duration, 1);
         setCount(Math.floor(progress * end));
 
@@ -209,7 +231,22 @@ export default function Landing() {
           cancelAnimationFrame(animationFrame);
         }
       };
-    }, [end, duration]);
+    }, [end, duration, hasStarted]);
+
+    // Start animation when element comes into view
+    useEffect(() => {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting && !hasStarted) {
+            setHasStarted(true);
+            observer.disconnect();
+          }
+        },
+        { threshold: 0.1 }
+      );
+
+      return () => observer.disconnect();
+    }, [hasStarted]);
 
     return count;
   };
@@ -224,32 +261,38 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Animated Background */}
-      <div className="fixed inset-0 -z-10">
+      <div className="fixed inset-0 -z-10 will-change-auto">
         <div className="absolute inset-0 gradient-hero" />
-        <motion.div
-          className="absolute top-20 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
-          animate={{
-            x: [0, 50, 0],
-            y: [0, 30, 0],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-        <motion.div
-          className="absolute bottom-20 -right-32 w-96 h-96 bg-secondary/10 rounded-full blur-3xl"
-          animate={{
-            x: [0, -50, 0],
-            y: [0, -30, 0],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
+        {!isMobile && (
+          <>
+            <motion.div
+              className="absolute top-20 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
+              animate={{
+                x: [0, 50, 0],
+                y: [0, 30, 0],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+              style={{ willChange: 'transform' }}
+            />
+            <motion.div
+              className="absolute bottom-20 -right-32 w-96 h-96 bg-secondary/10 rounded-full blur-3xl"
+              animate={{
+                x: [0, -50, 0],
+                y: [0, -30, 0],
+              }}
+              transition={{
+                duration: 10,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+              style={{ willChange: 'transform' }}
+            />
+          </>
+        )}
       </div>
 
       {/* Navbar */}
@@ -322,27 +365,33 @@ export default function Landing() {
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center px-4 pt-16 overflow-hidden">
         {/* Animated Background Elements */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center will-change-auto">
           <motion.div
             className="absolute w-full h-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
+            style={{ willChange: 'opacity' }}
           >
-            <QrCode className="absolute top-20 right-10 h-32 w-32 text-primary/10 -rotate-12 opacity-40" />
-            <QrCode className="absolute bottom-32 left-5 h-40 w-40 text-secondary/10 rotate-45 opacity-30" />
+            {!isMobile && (
+              <>
+                <QrCode className="absolute top-20 right-10 h-32 w-32 text-primary/10 -rotate-12 opacity-40" />
+                <QrCode className="absolute bottom-32 left-5 h-40 w-40 text-secondary/10 rotate-45 opacity-30" />
+              </>
+            )}
           </motion.div>
         </div>
         
-        <div className="container mx-auto max-w-5xl text-center relative z-10">
+        <div className="container mx-auto max-w-5xl text-center relative z-10 mt-2">
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary/25 to-secondary/25 border border-primary/50 mb-10 backdrop-blur-sm hover:border-primary/70 transition-all hover:from-primary/35 hover:to-secondary/35 shadow-sm"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary/25 to-secondary/25 border border-primary/50 mb-6 md:mb-10 backdrop-blur-sm hover:border-primary/70 transition-all hover:from-primary/35 hover:to-secondary/35 shadow-sm will-change-transform"
+            style={{ willChange: 'transform, opacity' }}
           >
-            <Sparkles className="h-5 w-5 text-primary animate-pulse flex-shrink-0" />
+            {/* <Sparkles className="h-5 w-5 text-primary animate-pulse flex-shrink-0" /> */}
             <span className="text-sm font-bold text-foreground">
               ✨ The Smart Way to Network at Events
             </span>
@@ -353,16 +402,18 @@ export default function Landing() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="text-5xl md:text-7xl font-extrabold leading-tight mb-6 tracking-tight"
+            className="text-5xl md:text-7xl font-extrabold leading-tight mb-4 md:mb-6 tracking-tight will-change-transform"
+            style={{ willChange: 'transform, opacity' }}
           >
             Transform Trade Shows Into{' '}
             <span className="relative inline-block">
               Powerful Networks
               <motion.div
-                className="absolute -bottom-2 left-0 w-full h-1.5 bg-gradient-to-r from-primary via-secondary to-primary rounded-full"
+                className="absolute -bottom-2 left-0 w-full h-1.5 bg-gradient-to-r from-primary via-secondary to-primary rounded-full will-change-transform"
                 initial={{ scaleX: 0, originX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ duration: 1, delay: 0.6 }}
+                style={{ willChange: 'transform' }}
               />
             </span>
           </motion.h1>
@@ -372,7 +423,8 @@ export default function Landing() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-3"
+            className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-6 md:mb-3 will-change-transform"
+            style={{ willChange: 'transform, opacity' }}
           >
             Connect exhibitors and attendees seamlessly with QR technology. Build meaningful business relationships and maximize your trade show ROI.
           </motion.p>
@@ -382,19 +434,20 @@ export default function Landing() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="flex flex-wrap justify-center gap-4 mb-10 text-sm"
+            className="flex flex-wrap justify-center gap-2 md:gap-4 mb-6 md:mb-10 text-sm will-change-transform"
+            style={{ willChange: 'transform, opacity' }}
           >
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/40 backdrop-blur-sm border border-border/50">
+            <div className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-muted/40 backdrop-blur-sm border border-border/50">
               <Check className="h-4 w-4 text-green-500" />
-              <span>50,000+ Connections Made</span>
+              <span className="text-xs md:text-sm">50,000+ Connections Made</span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/40 backdrop-blur-sm border border-border/50">
+            <div className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-muted/40 backdrop-blur-sm border border-border/50">
               <Check className="h-4 w-4 text-green-500" />
-              <span>95% Satisfaction Rate</span>
+              <span className="text-xs md:text-sm">95% Satisfaction Rate</span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/40 backdrop-blur-sm border border-border/50">
+            <div className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-muted/40 backdrop-blur-sm border border-border/50">
               <Check className="h-4 w-4 text-green-500" />
-              <span>500+ Events Powered</span>
+              <span className="text-xs md:text-sm">500+ Events Powered</span>
             </div>
           </motion.div>
 
@@ -403,12 +456,13 @@ export default function Landing() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+            className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center will-change-transform w-full"
+            style={{ willChange: 'transform, opacity' }}
           >
             <Button 
               size="lg" 
               onClick={() => navigate('/login')} 
-              className="text-lg px-8 py-6 h-auto font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-gray-700" 
+              className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 h-auto font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-gray-700 w-full sm:w-auto" 
               style={{ background: 'linear-gradient(135deg, #EBCB42 0%, #FFEC99 50%, #EBCB42 100%)' }}
             >
               <Zap className="mr-2 h-5 w-5" />
@@ -418,7 +472,7 @@ export default function Landing() {
               size="lg" 
               variant="outline" 
               onClick={() => scrollToSection('features')} 
-              className="text-lg px-8 py-6 h-auto font-semibold rounded-xl border-2 hover:bg-primary/5 transition-all duration-300"
+              className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 h-auto font-semibold rounded-xl border-2 hover:bg-primary/5 transition-all duration-300 w-full sm:w-auto"
             >
               Learn More
               <ArrowRight className="ml-2 h-5 w-5" />
