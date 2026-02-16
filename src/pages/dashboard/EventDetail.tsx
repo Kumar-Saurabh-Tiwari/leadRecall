@@ -73,6 +73,7 @@ export default function EventDetail() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'exhibitor' | 'attendee'>('all');
   const [isWeatherDialogOpen, setIsWeatherDialogOpen] = useState(false);
+  const [isInviteLoading, setIsInviteLoading] = useState(false);
 
   // Map API response to Entry type
   const mapApiResponseToEntry = (item: ApiEntryResponse): Entry => {
@@ -153,7 +154,7 @@ export default function EventDetail() {
     fetchEventAndEntries();
   }, [id, navigate, user, events]);
 
-  const handleInvite = () => {
+  const handleInvite = async () => {
     if (!inviteEmail.trim()) {
       toast({
         title: 'Error',
@@ -174,15 +175,32 @@ export default function EventDetail() {
       return;
     }
 
-    console.log('Inviting user with email:', inviteEmail);
-    toast({
-      title: 'Invitation Sent',
-      description: `Invitation sent to ${inviteEmail}`,
-    });
+    try {
+      setIsInviteLoading(true);
+      await eventService.inviteLeadUserToEventTeam({
+        email: inviteEmail,
+        eventId: event.id,
+        adminEmail: user?.email,
+      });
 
-    // Reset and close dialog
-    setInviteEmail('');
-    setIsInviteDialogOpen(false);
+      toast({
+        title: 'Success',
+        description: `Invitation sent to ${inviteEmail}`,
+      });
+
+      // Reset and close dialog
+      setInviteEmail('');
+      setIsInviteDialogOpen(false);
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send invitation. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsInviteLoading(false);
+    }
   };
 
   if (!event || isLoading) {
@@ -695,12 +713,22 @@ export default function EventDetail() {
                 setInviteEmail('');
                 setIsInviteDialogOpen(false);
               }}
+              disabled={isInviteLoading}
             >
               Cancel
             </Button>
-            <Button onClick={handleInvite} className="gradient-primary">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Send Invitation
+            <Button onClick={handleInvite} className="gradient-primary" disabled={isInviteLoading}>
+              {isInviteLoading ? (
+                <>
+                  <div className="w-4 h-4 mr-2 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Send Invitation
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
