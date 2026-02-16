@@ -212,6 +212,44 @@ export default function EditEntry() {
       // Refetch all entries to update the list
       const updatedEntries = await offlineEntryService.fetchAndCacheEntries(user.email, user.role);
       setEntriesInContext(updatedEntries);
+      let apiResponse;
+      if (user.role === 'exhibitor') {
+        apiResponse = await entryService.getExhibitorData(user.email);
+      } else {
+        apiResponse = await entryService.getAttendeeData(user.email);
+      }
+
+      // Transform API response to Entry format
+      const dataArray = apiResponse?.data || apiResponse;
+      if (dataArray && Array.isArray(dataArray)) {
+        const transformedEntries: Entry[] = dataArray.map((item: any) => {
+          // Get first non-empty event title
+          const validEvent = item.oContactData?.sEventTitles?.find((evt: any) => evt.sTitle && evt.sTitle.trim());
+          
+          // Get first non-N/A LinkedIn profile link
+          const linkedinProfile = item.oContactData?.profiles?.find((prof: any) => prof.sProfileLink && prof.sProfileLink !== 'N/A');
+          
+          return {
+            id: item._id || item.id || crypto.randomUUID(),
+            name: item.oContactData ? 
+              `${item.oContactData.sFirstName || ''} ${item.oContactData.sLastName || ''}`.trim() : 
+              'Unknown',
+            company: item.oContactData?.sCompany || 'Unknown Company',
+            event: validEvent?.sTitle || 'Unknown Event',
+            notes: item.oContactData?.sEntryNotes?.[0] || '',
+            type: user.role === 'exhibitor' ? 'attendee' : 'exhibitor',
+            createdAt: item.dCreatedDate ? new Date(item.dCreatedDate) : new Date(),
+            email: item.oContactData?.sEmail?.[0]?.Email || undefined,
+            phone: item.oContactData?.contacts?.[0]?.sContactNumber || undefined,
+            linkedin: linkedinProfile?.sProfileLink || undefined,
+            profileUrl: undefined,
+            image: item?.sMediaUrl && item?.sMediaUrl !== 'No Image' ? item?.sMediaUrl : undefined
+          };
+        });
+
+        // Update context with new entries
+        setEntriesInContext(transformedEntries);
+      }
 
       toast({
         title: 'Success',

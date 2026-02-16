@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { EventProvider } from "@/contexts/EventContext";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { useAuth } from "@/contexts/AuthContext";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import RegisterExhibitor from "./pages/RegisterExhibitor";
@@ -27,6 +28,49 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Protected route component for authenticated users
+const ProtectedRoute = ({ element }: { element: JSX.Element }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? element : <Navigate to="/login" replace />;
+};
+
+// Route for authenticated users to redirect to dashboard
+const AuthenticatedRedirect = ({ element }: { element: JSX.Element }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : element;
+};
+
+const AppRoutes = () => (
+  <Routes>
+    {/* Landing and Auth Routes - redirect to dashboard if authenticated */}
+    <Route path="/" element={<AuthenticatedRedirect element={<Landing />} />} />
+    <Route path="/login" element={<AuthenticatedRedirect element={<Login />} />} />
+    <Route path="/register-exhibitor" element={<AuthenticatedRedirect element={<RegisterExhibitor />} />} />
+    <Route path="/register-attendee" element={<AuthenticatedRedirect element={<RegisterAttendee />} />} />
+    <Route path="/register" element={<AuthenticatedRedirect element={<Navigate to="/register-exhibitor" replace />} />} />
+    
+    {/* Protected Dashboard Routes */}
+    <Route path="/dashboard" element={<ProtectedRoute element={<DashboardLayout />} />}>
+      <Route index element={<Home />} />
+      <Route path="entry/:id" element={<EntryDetail />} />
+      <Route path="edit/:id" element={<EditEntry />} />
+      <Route path="events" element={<Events />} />
+      <Route path="event/:id" element={<EventDetail />} />
+      <Route path="event-info/:id" element={<EventInfo />} />
+      <Route path="calendar" element={<CalendarPage />} />
+      <Route path="profile" element={<Profile />} />
+      {/* Add Entry Routes */}
+      <Route path="add/scan-qr" element={<ScanQR />} />
+      <Route path="add/manual" element={<AddContact />} />
+      <Route path="add/scan-ocr" element={<ScanOCR />} />
+      <Route path="add/event" element={<AddEvent />} />
+    </Route>
+    
+    {/* Fallback */}
+    <Route path="*" element={<NotFound />} />
+  </Routes>
+);
+
 const App = () => (
   <div className="min-h-screen">
     <QueryClientProvider client={queryClient}>
@@ -37,34 +81,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <ScrollToTop />
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Landing />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register-exhibitor" element={<RegisterExhibitor />} />
-                <Route path="/register-attendee" element={<RegisterAttendee />} />
-                <Route path="/register" element={<Navigate to="/register-exhibitor" replace />} />
-                
-                {/* Protected Dashboard Routes */}
-                <Route path="/dashboard" element={<DashboardLayout />}>
-                  <Route index element={<Home />} />
-                  <Route path="entry/:id" element={<EntryDetail />} />
-                  <Route path="edit/:id" element={<EditEntry />} />
-                  <Route path="events" element={<Events />} />
-                  <Route path="event/:id" element={<EventDetail />} />
-                  <Route path="event-info/:id" element={<EventInfo />} />
-                  <Route path="calendar" element={<CalendarPage />} />
-                  <Route path="profile" element={<Profile />} />
-                  {/* Add Entry Routes */}
-                  <Route path="add/scan-qr" element={<ScanQR />} />
-                  <Route path="add/manual" element={<AddContact />} />
-                  <Route path="add/scan-ocr" element={<ScanOCR />} />
-                  <Route path="add/event" element={<AddEvent />} />
-                </Route>
-                
-                {/* Fallback */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AppRoutes />
             </BrowserRouter>
           </TooltipProvider>
         </EventProvider>

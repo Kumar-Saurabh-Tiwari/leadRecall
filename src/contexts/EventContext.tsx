@@ -148,6 +148,49 @@ export function EventProvider({ children }: { children: ReactNode }) {
       const fetchedEntries = await offlineEntryService.fetchAndCacheEntries(user.email, user.role);
       setEntriesState(fetchedEntries);
       setIsEntriesInitialized(true);
+      let apiResponse;
+      if (user.role === 'exhibitor') {
+        // Exhibitors get attendee data
+        apiResponse = await entryService.getExhibitorData(user.email);
+      } else {
+        // Attendees get exhibitor data
+        apiResponse = await entryService.getAttendeeData(user.email);
+      }
+
+      console.log('Refresh API Response:', apiResponse);
+
+      // Transform API response to Entry format
+      const dataArray = apiResponse?.data || apiResponse;
+      if (dataArray && Array.isArray(dataArray)) {
+        const transformedEntries: Entry[] = dataArray.map((item: any) => {
+          // Get first non-empty event title
+          const validEvent = item.oContactData?.sEventTitles?.find((evt: any) => evt.sTitle && evt.sTitle.trim());
+          
+          // Get first non-N/A LinkedIn profile link
+          const linkedinProfile = item.oContactData?.profiles?.find((prof: any) => prof.sProfileLink && prof.sProfileLink !== 'N/A');
+          
+          return {
+            id: item._id || item.id || crypto.randomUUID(),
+            name: item.oContactData ? 
+              `${item.oContactData.sFirstName || ''} ${item.oContactData.sLastName || ''}`.trim() : 
+              'Unknown',
+            company: item.oContactData?.sCompany || 'Unknown Company',
+            event: validEvent?.sTitle || 'Unknown Event',
+            notes: item.oContactData?.sEntryNotes?.[0] || '',
+            type: user.role === 'exhibitor' ? 'attendee' : 'exhibitor',
+            createdAt: item.dCreatedDate ? new Date(item.dCreatedDate) : new Date(),
+            email: item.oContactData?.sEmail?.[0]?.Email || undefined,
+            phone: item.oContactData?.contacts?.[0]?.sContactNumber || undefined,
+            linkedin: linkedinProfile?.sProfileLink || undefined,
+            profileUrl: undefined,
+            image: item?.sMediaUrl && item?.sMediaUrl !== 'No Image' ? item?.sMediaUrl : undefined
+          };
+        });
+
+        setEntriesState(transformedEntries);
+      } else {
+        setEntriesState([]);
+      }
     } catch (err) {
       console.error('Error refreshing entries:', err);
       // Load from cache on error

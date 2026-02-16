@@ -4,7 +4,13 @@ interface OCRResult {
   labels?: string[];
   text?: string;
   confidence?: number;
-  // Add other fields as needed based on API response
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  website?: string;
+  job_title?: string;
+  company?: string;
 }
 
 /**

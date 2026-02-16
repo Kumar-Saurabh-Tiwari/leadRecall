@@ -120,6 +120,8 @@ body {
   /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* Hide scrollbar for cleaner look */
@@ -179,5 +181,50 @@ body {
 
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* GPU Acceleration for smooth animations */
+  .will-change-transform {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
+  .will-change-auto {
+    will-change: auto;
+  }
+
+  /* Performance optimizations */
+  .motion-safe {
+    @media (prefers-reduced-motion: reduce) {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+
+  /* Optimize scrolling performance */
+  .scroll-smooth {
+    scroll-behavior: smooth;
+  }
+
+  /* Prevent layout thrashing */
+  .contain-layout {
+    contain: layout style paint;
+  }
+
+  /* Mobile performance: disable expensive effects */
+  @media (max-width: 768px) {
+    .blur-3xl {
+      filter: blur(24px) !important;
+    }
+
+    .backdrop-blur-lg {
+      backdrop-filter: blur(8px) !important;
+    }
+
+    .backdrop-blur-sm {
+      backdrop-filter: blur(4px) !important;
+    }
   }
 }

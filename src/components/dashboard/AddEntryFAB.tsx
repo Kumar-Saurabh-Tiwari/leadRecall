@@ -152,8 +152,26 @@ export function AddEntryFAB({ onEntryAdded }: { onEntryAdded?: () => void }) {
                   Loading events...
                 </div>
               ) : events.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  No events available
+                <div className="flex flex-col items-center justify-center py-16 px-4">
+                  <div className="mb-4 p-4 bg-muted/50 rounded-full">
+                    <Calendar className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    No Events Available
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-6 text-center">
+                    Create your first event to start adding entries
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setShowEventDialog(false);
+                      navigate('/dashboard/add/event');
+                    }}
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add New Event
+                  </Button>
                 </div>
               ) : (
                 events.map((event, index) => {
@@ -247,19 +265,31 @@ export function AddEntryFAB({ onEntryAdded }: { onEntryAdded?: () => void }) {
               )}
             </div>
           </ScrollArea>
-          <div className="flex gap-2 justify-end pt-4 border-t">
+          <div className="flex gap-2 justify-between pt-4 border-t">
             <Button
               variant="outline"
-              onClick={() => setShowEventDialog(false)}
+              onClick={() => {
+                setShowEventDialog(false);
+                navigate('/dashboard/add/event');
+              }}
             >
-              Cancel
+              <Plus className="h-4 w-4 mr-2" />
+              Add New Event
             </Button>
-            <Button
-              onClick={() => selectedEvent && handleEventSelect(selectedEvent)}
-              disabled={!selectedEvent}
-            >
-              Continue
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowEventDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => selectedEvent && handleEventSelect(selectedEvent)}
+                disabled={!selectedEvent}
+              >
+                Continue
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
