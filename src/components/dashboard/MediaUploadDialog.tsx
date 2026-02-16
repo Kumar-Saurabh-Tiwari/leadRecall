@@ -45,6 +45,7 @@ export function MediaUploadDialog({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const { toast } = useToast();
@@ -63,7 +64,7 @@ export function MediaUploadDialog({
   const initializeCamera = async () => {
     // On mobile, use native camera via file input
     if (isMobileDevice()) {
-      fileInputRef.current?.click();
+      cameraInputRef.current?.click();
       return;
     }
 
@@ -188,6 +189,20 @@ export function MediaUploadDialog({
       });
       return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64Data = e.target?.result as string;
+      setPreviewImage(base64Data);
+      setStep('result');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handle camera file selection
+  const handleCameraCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -391,7 +406,17 @@ export function MediaUploadDialog({
             </motion.div>
           )}
 
-          {/* Hidden file input */}
+          {/* Hidden camera input */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleCameraCapture}
+            className="hidden"
+            capture="environment"
+          />
+
+          {/* Hidden file input for gallery */}
           <input
             ref={fileInputRef}
             type="file"
