@@ -177,7 +177,7 @@ export function MediaUploadDialog({
   };
 
   // Handle file selection
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -190,27 +190,103 @@ export function MediaUploadDialog({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64Data = e.target?.result as string;
-      setPreviewImage(base64Data);
-      setStep('result');
-    };
-    reader.readAsDataURL(file);
+    try {
+      setIsLoading(true);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const dataUrl = e.target?.result as string;
+          const compressedDataUrl = await compressImage(dataUrl);
+          setPreviewImage(compressedDataUrl);
+          setStep('result');
+        } catch (error) {
+          console.error('Compression error:', error);
+          toast({
+            title: 'Compression Error',
+            description: 'Failed to process image.',
+            variant: 'destructive',
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('File selection error:', error);
+      setIsLoading(false);
+    }
+  };
+
+  // Compress image
+  const compressImage = (dataUrl: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxWidth = 1024;
+        const maxHeight = 1024;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(compressedDataUrl);
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = dataUrl;
+    });
   };
 
   // Handle camera file selection
-  const handleCameraCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCameraCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64Data = e.target?.result as string;
-      setPreviewImage(base64Data);
-      setStep('result');
-    };
-    reader.readAsDataURL(file);
+    try {
+      setIsLoading(true);
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const dataUrl = e.target?.result as string;
+          const compressedDataUrl = await compressImage(dataUrl);
+          setPreviewImage(compressedDataUrl);
+          setStep('result');
+        } catch (error) {
+          console.error('Compression error:', error);
+          toast({
+            title: 'Compression Error',
+            description: 'Failed to process image.',
+            variant: 'destructive',
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Camera capture error:', error);
+      setIsLoading(false);
+    }
   };
 
   // Upload media to server
@@ -223,6 +299,12 @@ export function MediaUploadDialog({
       // Convert data URL to blob
       const response = await fetch(previewImage);
       const blob = await response.blob();
+      
+      // Check blob size
+      if (blob.size > 5 * 1024 * 1024) {
+        throw new Error('Image size exceeds 5MB limit after compression');
+      }
+
       const file = new File([blob], 'contact-photo.jpg', { type: 'image/jpeg' });
 
       // Upload to server
@@ -235,11 +317,12 @@ export function MediaUploadDialog({
 
       onMediaUpload(mediaUrl);
       handleClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
+      const errorMessage = error?.message || 'Failed to upload photo. Please try again.';
       toast({
         title: 'Upload failed',
-        description: 'Failed to upload photo. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
