@@ -10,42 +10,26 @@ interface SafeImageProps {
 }
 
 /**
- * SafeImage component with caching, retry logic, and fallback
- * Ensures images always display either from cache, API, or placeholder
+ * SafeImage component with caching and fallback
+ * Loads images directly and shows placeholder on error
  */
 export function SafeImage({ src, alt, className = '', fallbackClassName = '' }: SafeImageProps) {
   const [imageUrl, setImageUrl] = useState<string>(src || '');
-  const [isLoading, setIsLoading] = useState(!!src);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     if (!src) {
       setImageUrl('');
-      setIsLoading(false);
       setHasError(false);
       return;
     }
 
-    // Reset states on new src
-    setIsLoading(true);
-    setHasError(false);
-
-    const loadImage = async () => {
-      try {
-        // Use cache manager for reliability
-        const cachedOrUrl = await imageCacheManager.getImage(src);
-        setImageUrl(cachedOrUrl);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Failed to load image:', src, error);
-        // Fallback to original URL anyway
-        setImageUrl(src);
-        setIsLoading(false);
-        setHasError(true);
-      }
-    };
-
-    loadImage();
+    // Get cached or fresh URL
+    imageCacheManager.getImage(src).then(url => {
+      setImageUrl(url);
+    }).catch(() => {
+      setImageUrl(src); // Fallback to original URL
+    });
   }, [src]);
 
   if (!imageUrl || hasError) {
@@ -64,7 +48,6 @@ export function SafeImage({ src, alt, className = '', fallbackClassName = '' }: 
       className={className}
       loading="lazy"
       onError={() => setHasError(true)}
-      onLoad={() => setIsLoading(false)}
     />
   );
 }
