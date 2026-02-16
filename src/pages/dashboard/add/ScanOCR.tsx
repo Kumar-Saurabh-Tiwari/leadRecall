@@ -461,7 +461,7 @@ export default function ScanOCR() {
           />
 
           {/* Scanner Preview Area */}
-          <div className="relative aspect-[3/2] bg-muted rounded-xl overflow-hidden border-2 border-dashed border-border">
+          <div className="relative aspect-square bg-muted rounded-xl overflow-hidden border-2 border-dashed border-border">
             {cameraActive ? (
               <>
                 <video
