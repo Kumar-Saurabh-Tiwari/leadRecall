@@ -493,7 +493,7 @@ export default function ScanOCR() {
                 <img
                   src={previewImage}
                   alt="Card preview"
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-cover"
                 />
               </div>
             ) : (
