@@ -121,19 +121,41 @@ export default function ScanOCR() {
       
       console.log('OCR Service Result:', result);
       
-      // Parse the result - assuming the API returns structured data
-      let contactData: ExtractedContact | null = null;
-      
+      // Initialize with empty contact data
+      let contactData: ExtractedContact = {
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        website: '',
+        job_title: '',
+        company: ''
+      };
+
+      // Check if result already has structured contact fields
       if (result && typeof result === 'object') {
-        contactData = {
-          name: result.name || '',
-          email: result.email || '',
-          phone: result.phone || '',
-          address: result.address || '',
-          website: result.website || '',
-          job_title: result.job_title || '',
-          company: result.company || ''
-        };
+        // Use directly returned fields if they exist
+        contactData.name = result.name?.trim() || '';
+        contactData.email = result.email?.trim() || '';
+        contactData.phone = result.phone?.trim() || '';
+        contactData.address = result.address?.trim() || '';
+        contactData.website = result.website?.trim() || '';
+        contactData.job_title = result.job_title?.trim() || '';
+        contactData.company = result.company?.trim() || '';
+      }
+
+      // If no data extracted, try parsing from text field
+      if (!contactData.name && result?.text) {
+        contactData.name = extractField(result.text, 'name') || '';
+        contactData.email = extractField(result.text, 'email') || '';
+        contactData.phone = extractField(result.text, 'phone') || '';
+        contactData.company = extractField(result.text, 'company') || '';
+        contactData.job_title = extractField(result.text, 'title|job') || '';
+      }
+
+      // Use labels if available
+      if (result?.labels && result.labels.length > 0) {
+        console.log('Detected labels:', result.labels);
       }
       
       console.log('Extracted Contact Data:', contactData);
@@ -143,6 +165,30 @@ export default function ScanOCR() {
       console.error('OCR Service Error:', error);
       return null;
     }
+  };
+
+  // Helper function to extract fields from text
+  const extractField = (text: string, fieldType: string): string | null => {
+    const patterns: { [key: string]: RegExp } = {
+      email: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/,
+      phone: /(\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/,
+      name: /^[A-Z][a-z]+ [A-Z][a-z]+/m,
+      website: /https?:\/\/[^\s]+|www\.[^\s]+/i,
+      title: /(?:manager|director|engineer|developer|designer|analyst|consultant|specialist|coordinator|officer|executive)/i,
+      company: /(?:Inc|Ltd|LLC|Corp|Company|Co|Corporation)/i,
+    };
+
+    const fieldPatterns = fieldType.split('|');
+    for (const field of fieldPatterns) {
+      const pattern = patterns[field.trim()];
+      if (pattern) {
+        const match = text.match(pattern);
+        if (match) {
+          return match[0];
+        }
+      }
+    }
+    return null;
   };
 
   const handleTakePhoto = async () => {
@@ -241,68 +287,20 @@ export default function ScanOCR() {
     try {
       setIsProcessing(true);
 
+      let imageBlob: Blob | null = null;
+
       // If uploaded file exists, use it directly (File extends Blob)
       if (uploadedFile) {
-        const ocrResult = await performOCRProcessing(uploadedFile);
-
-        console.log('Image OCR result:', ocrResult);
-        console.log('Image info:', {
-          source: 'uploaded',
-          fileName: uploadedFile.name,
-          fileSize: uploadedFile.size,
-          fileType: uploadedFile.type,
-          timestamp: new Date().toISOString(),
-        });
-
-        if (ocrResult) {
-          setExtractedData(ocrResult);
-          toast({
-            title: 'Image Processed Successfully',
-            description: 'Contact information extracted',
-          });
-        } else {
-          toast({
-            title: 'Processing Failed',
-            description: 'Could not extract contact information',
-            variant: 'destructive',
-          });
-        }
-
-        setIsProcessing(false);
+        imageBlob = uploadedFile;
       } 
       // Otherwise use canvas for captured photo
       else if (canvasRef.current) {
-        canvasRef.current.toBlob(async (blob) => {
-          if (!blob) {
-            setIsProcessing(false);
-            return;
-          }
+        imageBlob = await new Promise<Blob | null>((resolve) => {
+          canvasRef.current!.toBlob((blob) => resolve(blob), 'image/jpeg', 0.95);
+        });
+      }
 
-          const ocrResult = await performOCRProcessing(blob);
-
-          console.log('Image OCR result:', ocrResult);
-          console.log('Image info:', {
-            source: 'captured',
-            timestamp: new Date().toISOString(),
-          });
-
-          if (ocrResult) {
-            setExtractedData(ocrResult);
-            toast({
-              title: 'Image Processed Successfully',
-              description: 'Contact information extracted',
-            });
-          } else {
-            toast({
-              title: 'Processing Failed',
-              description: 'Could not extract contact information',
-              variant: 'destructive',
-            });
-          }
-
-          setIsProcessing(false);
-        }, 'image/jpeg', 0.95);
-      } else {
+      if (!imageBlob) {
         console.error('No image source available');
         setIsProcessing(false);
         toast({
@@ -310,7 +308,35 @@ export default function ScanOCR() {
           description: 'No image to process',
           variant: 'destructive',
         });
+        return;
       }
+
+      const ocrResult = await performOCRProcessing(imageBlob);
+
+      console.log('Image OCR result:', ocrResult);
+      console.log('Image info:', {
+        source: uploadedFile ? 'uploaded' : 'captured',
+        fileName: uploadedFile?.name || 'captured.jpg',
+        fileSize: imageBlob.size,
+        fileType: imageBlob.type,
+        timestamp: new Date().toISOString(),
+      });
+
+      if (ocrResult) {
+        setExtractedData(ocrResult);
+        toast({
+          title: 'Image Processed Successfully',
+          description: 'Contact information extracted',
+        });
+      } else {
+        toast({
+          title: 'Processing Failed',
+          description: 'Could not extract contact information',
+          variant: 'destructive',
+        });
+      }
+
+      setIsProcessing(false);
     } catch (error) {
       console.error('Scan error:', error);
       setIsProcessing(false);
@@ -428,6 +454,12 @@ export default function ScanOCR() {
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {/* Hidden canvas for capturing photos */}
+          <canvas
+            ref={canvasRef}
+            className="hidden"
+          />
+
           {/* Scanner Preview Area */}
           <div className="relative aspect-[3/2] bg-muted rounded-xl overflow-hidden border-2 border-dashed border-border">
             {cameraActive ? (
@@ -437,10 +469,6 @@ export default function ScanOCR() {
                   autoPlay
                   playsInline
                   className="absolute inset-0 w-full h-full object-cover"
-                />
-                <canvas
-                  ref={canvasRef}
-                  className="hidden"
                 />
                 {/* Business card frame guide */}
                 <div className="absolute inset-0 flex items-center justify-center">
