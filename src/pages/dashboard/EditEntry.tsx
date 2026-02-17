@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Save, Trash2, Loader } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Loader, QrCode } from 'lucide-react';
+import ScanQrDialog from '@/components/dashboard/ScanQrDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,6 +36,7 @@ export default function EditEntry() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [showQrDialog, setShowQrDialog] = useState(false);
 
   const [formData, setFormData] = useState<Partial<Entry>>({
     name: '',
@@ -433,13 +435,23 @@ export default function EditEntry() {
 
                 <div className="space-y-2">
                   <Label htmlFor="linkedin">LinkedIn Profile</Label>
-                  <Input
-                    id="linkedin"
-                    name="linkedin"
-                    value={formData.linkedin || ''}
-                    onChange={handleChange}
-                    placeholder="Enter LinkedIn URL"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="linkedin"
+                      name="linkedin"
+                      value={formData.linkedin || ''}
+                      onChange={handleChange}
+                      placeholder="Enter LinkedIn URL"
+                    />
+                    <button
+                      type="button"
+                      title="Scan LinkedIn QR"
+                      onClick={() => setShowQrDialog(true)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 rounded-md flex items-center justify-center hover:bg-secondary/20 transition-colors"
+                    >
+                      <QrCode className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -496,6 +508,15 @@ export default function EditEntry() {
           </motion.div>
         </form>
       </div>
+
+      {/* Scan LinkedIn dialog (fills linkedin input) */}
+      <ScanQrDialog
+        open={showQrDialog}
+        onOpenChange={setShowQrDialog}
+        onScanned={(url) => setFormData(prev => ({ ...prev, linkedin: url }))}
+        title="Scan LinkedIn QR"
+        description="Scan a QR that contains a LinkedIn or profile URL"
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

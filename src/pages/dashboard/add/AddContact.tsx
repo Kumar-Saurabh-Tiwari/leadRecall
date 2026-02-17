@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, User, Building2, Calendar, FileText, Loader2, UserPlus, Image as ImageIcon, X } from 'lucide-react';
+import { ArrowLeft, User, Building2, Calendar, FileText, Loader2, UserPlus, Image as ImageIcon, X, QrCode } from 'lucide-react';
+import ScanQrDialog from '@/components/dashboard/ScanQrDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -84,6 +85,7 @@ export default function AddContact() {
   const [selectedEventData, setSelectedEventData] = useState<LocationState['selectedEvent'] | null>(null);
   const [mediaUrl, setMediaUrl] = useState<string>('');
   const [scannedViaOCR, setScannedViaOCR] = useState<boolean>(false);
+  const [showQrDialog, setShowQrDialog] = useState(false);
 
   // Get selected event and OCR data from navigation state
   useEffect(() => {
@@ -443,7 +445,7 @@ export default function AddContact() {
               </div>
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="contact-phone">Phone Number</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -456,7 +458,7 @@ export default function AddContact() {
                   maxLength={20}
                 />
               </div>
-            </div>
+            </div> */}
 
             <div className="space-y-2">
               <Label htmlFor="contact-company">Company</Label>
@@ -473,7 +475,7 @@ export default function AddContact() {
               </div>
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="contact-designation">Designation</Label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -486,7 +488,7 @@ export default function AddContact() {
                   maxLength={100}
                 />
               </div>
-            </div>
+            </div> */}
 
             <div className="space-y-2">
               <Label htmlFor="contact-linkedin">LinkedIn URL</Label>
@@ -500,10 +502,18 @@ export default function AddContact() {
                   className="pl-10"
                   maxLength={200}
                 />
+                <button
+                  type="button"
+                  title="Scan LinkedIn QR"
+                  onClick={() => setShowQrDialog(true)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 rounded-md flex items-center justify-center hover:bg-secondary/20 transition-colors"
+                >
+                  <QrCode className="h-4 w-4 text-muted-foreground" />
+                </button>
               </div>
-            </div>
+            </div> 
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="contact-event">Event</Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -517,9 +527,9 @@ export default function AddContact() {
                   disabled={selectedEventData !== null}
                 />
               </div>
-            </div>
+            </div> */}
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="contact-notes">Notes</Label>
               <div className="relative">
                 <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -532,7 +542,7 @@ export default function AddContact() {
                   maxLength={1000}
                 />
               </div>
-            </div>
+            </div> */}
 
             <div className="pt-2 space-y-3">
               <Button
@@ -576,6 +586,17 @@ export default function AddContact() {
         title="Add Contact Photo"
         description="Take a photo with your camera or upload one from your device"
         getDirectURL={getMediaUploadService().getDirectURL.bind(getMediaUploadService())}
+      />
+
+      {/* LinkedIn QR-scan dialog (fills LinkedIn input) */}
+      <ScanQrDialog
+        open={showQrDialog}
+        onOpenChange={setShowQrDialog}
+        onScanned={(url) => {
+          if (url) setLinkedinUrl(url);
+        }}
+        title="Scan LinkedIn QR"
+        description="Scan a QR that contains a LinkedIn or profile URL"
       />
     </motion.div>
   );

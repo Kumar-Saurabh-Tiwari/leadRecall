@@ -9,6 +9,8 @@ import {
   Briefcase,
   Plus,
   UserPlus,
+  QrCode,
+  ScanText,
   Grid3x3,
   List,
   LayoutGrid,
@@ -74,6 +76,12 @@ export default function EventDetail() {
   const [filterType, setFilterType] = useState<'all' | 'exhibitor' | 'attendee'>('all');
   const [isWeatherDialogOpen, setIsWeatherDialogOpen] = useState(false);
   const [isInviteLoading, setIsInviteLoading] = useState(false);
+  const [showAddOptionsDialog, setShowAddOptionsDialog] = useState(false);
+  const addOptions = [
+    { id: 'scan-qr', label: 'Scan QR For Contact', description: 'Scan QR code to add contact', icon: QrCode, path: '/dashboard/add/scan-qr' },
+    { id: 'add-manual', label: 'Add Contact Manually', description: 'Add contact manually', icon: UserPlus, path: '/dashboard/add/manual' },
+    { id: 'scan-ocr', label: 'Scan OCR For Contact', description: 'Scan business card', icon: ScanText, path: '/dashboard/add/scan-ocr' },
+  ];
 
   // Map API response to Entry type
   const mapApiResponseToEntry = (item: ApiEntryResponse): Entry => {
@@ -256,14 +264,7 @@ export default function EventDetail() {
             >
               <Button
                 size="sm"
-                onClick={() => navigate('/dashboard/add/manual', {
-                  state: {
-                    selectedEvent: {
-                      eventId: event.id,
-                      eventName: event.name
-                    }
-                  }
-                })}
+                onClick={() => setShowAddOptionsDialog(true)}
                 className="gradient-primary shadow-lg hover:shadow-xl transition-all"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -285,7 +286,7 @@ export default function EventDetail() {
           <Card className="border-border/50 overflow-hidden">
             <div className="flex flex-col md:flex-row">
               {/* Event Image - Left Side */}
-              {event.image && (
+              {/* {event.image && (
                 <div className="relative w-full md:w-40 lg:w-48 h-40 md:h-auto flex-shrink-0 overflow-hidden">
                   <img
                     src={event.image}
@@ -294,7 +295,7 @@ export default function EventDetail() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                 </div>
-              )}
+              )} */}
 
               {/* Content - Right Side */}
               <CardContent className="flex-1 p-3 flex flex-col justify-between">
@@ -322,10 +323,10 @@ export default function EventDetail() {
 
                       if (now > eventEnd) {
                         status = 'Past';
-                        statusColor = 'bg-gray-100/90 text-gray-700 border-0';
+                        statusColor = 'bg-gradient-to-r from-red-500 to-orange-500 text-white border-0';
                       } else if (now >= eventStart && now <= eventEnd) {
                         status = 'Live';
-                        statusColor = 'gradient-primary text-primary-foreground border-0';
+                        statusColor = 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0';
                       }
 
                       return (
@@ -540,14 +541,7 @@ export default function EventDetail() {
                   </p>
                   {!(searchQuery || filterType !== 'all') && (
                     <Button
-                      onClick={() => navigate('/dashboard/add/manual', {
-                        state: {
-                          selectedEvent: {
-                            eventId: event.id,
-                            eventName: event.name
-                          }
-                        }
-                      })}
+                      onClick={() => setShowAddOptionsDialog(true)}
                       variant="outline"
                       size="sm"
                     >
@@ -668,6 +662,46 @@ export default function EventDetail() {
           </motion.div>
         )}
       </div>
+
+      {/* Add Entry Options Dialog */}
+      <Dialog open={showAddOptionsDialog} onOpenChange={setShowAddOptionsDialog}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>Add Entry</DialogTitle>
+            <DialogDescription>Choose how you'd like to add a lead for this event</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 py-2">
+            {addOptions.map((option) => (
+              <button
+                key={option.id}
+                onClick={() => {
+                  setShowAddOptionsDialog(false);
+                  navigate(option.path, {
+                    state: {
+                      selectedEvent: {
+                        eventId: event.id,
+                        eventName: event.name,
+                      },
+                    },
+                  });
+                }}
+                className="w-full p-3 flex items-start gap-3 rounded-lg bg-card border border-border/50 hover:shadow-md transition"
+              >
+                <div className="flex items-center justify-center h-10 w-10 rounded-md bg-muted/50">
+                  <option.icon className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="text-left">
+                  <div className="font-medium text-sm">{option.label}</div>
+                  <div className="text-xs text-muted-foreground">{option.description}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setShowAddOptionsDialog(false)}>Cancel</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Weather Dialog */}
       {event && (

@@ -19,15 +19,14 @@ export default function Events() {
   const [timelineFilter, setTimelineFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const getEventTimeline = (eventDate: Date): 'upcoming' | 'live' | 'past' => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const eventDateOnly = new Date(eventDate);
-    eventDateOnly.setHours(0, 0, 0, 0);
+  const getEventTimeline = (eventDate: Date, eventEndDate?: Date): 'upcoming' | 'live' | 'past' => {
+    const now = new Date();
+    const eventStart = new Date(eventDate);
+    const eventEnd = eventEndDate ? new Date(eventEndDate) : new Date(eventDate);
 
-    if (eventDateOnly.getTime() > today.getTime()) return 'upcoming';
-    if (eventDateOnly.getTime() === today.getTime()) return 'live';
-    return 'past';
+    if (now > eventEnd) return 'past';
+    if (now >= eventStart && now <= eventEnd) return 'live';
+    return 'upcoming';
   };
 
   const getTimelineIcon = (timeline: 'upcoming' | 'live' | 'past') => {
@@ -46,15 +45,15 @@ export default function Events() {
       case 'upcoming':
         return 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0';
       case 'live':
-        return 'bg-gradient-to-r from-red-500 to-orange-500 text-white border-0';
-      case 'past':
         return 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0';
+      case 'past':
+        return 'bg-gradient-to-r from-red-500 to-orange-500 text-white border-0';
     }
   };
 
   const filteredEvents = events.filter(event => {
     const timelineMatch = timelineFilter === 'all' ||
-      getEventTimeline(event.date) === timelineFilter;
+      getEventTimeline(event.date, event.endDate) === timelineFilter;
     
     const searchMatch = event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                         event.location.toLowerCase().includes(searchQuery.toLowerCase());
@@ -128,7 +127,7 @@ export default function Events() {
                   All
                 </TabsTrigger>
                 <TabsTrigger value="live" className="rounded-xl px-2 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center gap-2">
-                  <Zap className="h-3.5 w-3.5 text-orange-500" />
+                  <Zap className="h-3.5 w-3.5 text-green-500" />
                   Live
                 </TabsTrigger>
                 <TabsTrigger value="upcoming" className="rounded-xl px-2 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center gap-2">
@@ -136,7 +135,7 @@ export default function Events() {
                   Upcoming
                 </TabsTrigger>
                 <TabsTrigger value="past" className="rounded-xl px-2 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center gap-2">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                  <CheckCircle2 className="h-3.5 w-3.5 text-red-500" />
                   Past
                 </TabsTrigger>
               </TabsList>
@@ -149,7 +148,7 @@ export default function Events() {
       <div className="px-3 py-2 space-y-3">
         {filteredEvents.length > 0 ? (
           filteredEvents.map((event, index) => {
-            const timeline = getEventTimeline(event.date);
+            const timeline = getEventTimeline(event.date, event.endDate);
             return (
               <motion.div
                 key={event.id}

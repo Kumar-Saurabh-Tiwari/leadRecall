@@ -13,25 +13,40 @@ import {
   Bus,
   Accessibility,
   ArrowLeft,
+  Edit2,
+  Users,
   ChevronRight,
-  ParkingCircle
+  ParkingCircle,
+  Mail,
+  CheckCircle2,
+  Clock3,
+  AlertCircle,
+  Loader
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useEvents } from '@/contexts/EventContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { eventService } from '@/services/eventService';
 import { format } from 'date-fns';
 import { Event } from '@/types';
+import { toast } from '@/hooks/use-toast';
 
 export default function EventInfo() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { events, entries } = useEvents();
   const [event, setEvent] = useState<Event | null>(null);
   const [isTravelLoading, setIsTravelLoading] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [travelEstimates, setTravelEstimates] = useState<any>(null);
   const [safeMapUrl, setSafeMapUrl] = useState<string | null>(null);
+  const [isEventTeamDialogOpen, setIsEventTeamDialogOpen] = useState(false);
+  const [teamData, setTeamData] = useState<any>(null);
+  const [isLoadingTeam, setIsLoadingTeam] = useState(false);
 
   const googleKey = 'AIzaSyAlMOoWowsyvCTi7YgaPI7EJQpLA2GX9y0';
 
@@ -102,6 +117,27 @@ export default function EventInfo() {
     return entries.filter(e => e.event === event.name);
   }, [entries, event]);
 
+  const fetchEventTeamData = async () => {
+    if (!event || !user?.email) return;
+    
+    try {
+      setIsLoadingTeam(true);
+      const response = await eventService.getAllEventTeamInvitations(event.id, user.email);
+      if (response && typeof response === 'object' && 'data' in response) {
+        setTeamData((response as any).data);
+      }
+    } catch (error) {
+      console.error('Error fetching team invitations:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load event team data',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingTeam(false);
+    }
+  };
+
   const mediaItemsCount = useMemo(() => {
     // Assuming some entries have media, or if the event itself has a media collection
     // For now, let's count entries with images or just use a fallback
@@ -134,6 +170,31 @@ export default function EventInfo() {
         <div className="relative">
           {/* Background Gradient */}
           <div className="relative h-16 bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-100 overflow-hidden" />
+
+          {/* Floating action buttons (top-right) */}
+          <div className="absolute right-4 top-4 z-20 flex items-center gap-3">
+            <Button
+              size="sm"
+              className="gradient-primary shadow-lg hover:shadow-xl transition-all rounded-full px-4 py-2.5"
+              onClick={() => navigate('/dashboard/add/event', { state: { eventToEdit: event } })}
+            >
+              <Edit2 className="h-4 w-4 mr-2" />
+              Edit Event
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              className="shadow-sm hover:shadow-md transition-shadow rounded-full px-3 py-2.5 bg-white/90"
+              onClick={() => {
+                setIsEventTeamDialogOpen(true);
+                fetchEventTeamData();
+              }}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Event Team
+            </Button>
+          </div>
 
           {/* Content Overlay */}
           <div className="relative px-6 pb-6 pt-0 -mt-2 flex gap-4 items-end">
@@ -324,6 +385,174 @@ export default function EventInfo() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Event Team Dialog */}
+      <Dialog open={isEventTeamDialogOpen} onOpenChange={setIsEventTeamDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Event Team
+            </DialogTitle>
+            <DialogDescription>
+              Manage invitations for {event?.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          {isLoadingTeam ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : teamData ? (
+            <div className="space-y-6">
+              {/* Event Info Summary */}
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4">
+                <h3 className="font-semibold text-foreground mb-3">Event Information</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Event:</span>
+                    <span className="font-medium text-foreground">{teamData.event?.eventTitle}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Type:</span>
+                    <span className="font-medium text-foreground">{teamData.event?.eventType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Location:</span>
+                    <span className="font-medium text-foreground line-clamp-1">{teamData.event?.location}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Start Date:</span>
+                    <span className="font-medium text-foreground">{format(new Date(teamData.event?.startDate), 'MMM d, yyyy HH:mm')}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Invitation Stats */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                  <div className="text-2xl font-bold text-blue-600">{teamData.invitationStats?.totalInvitations || 0}</div>
+                  <div className="text-xs text-blue-600 font-medium">Total Invitations</div>
+                </div>
+                <div className="bg-yellow-50 dark:bg-yellow-950/20 rounded-lg p-3 border border-yellow-200 dark:border-yellow-800">
+                  <div className="text-2xl font-bold text-yellow-600">{teamData.invitationStats?.pendingInvitations || 0}</div>
+                  <div className="text-xs text-yellow-600 font-medium">Pending</div>
+                </div>
+                <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                  <div className="text-2xl font-bold text-green-600">{teamData.invitationStats?.acceptedInvitations || 0}</div>
+                  <div className="text-xs text-green-600 font-medium">Accepted</div>
+                </div>
+                <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+                  <div className="text-2xl font-bold text-purple-600">{teamData.invitationStats?.adminCount || 0}</div>
+                  <div className="text-xs text-purple-600 font-medium">Admins</div>
+                </div>
+              </div>
+
+              {/* Admin Info */}
+              <div className="bg-card border border-border rounded-lg p-4">
+                <h4 className="font-semibold text-foreground mb-3">Event Super Admin</h4>
+                <div className="flex items-start gap-3">
+                  {teamData.admin?.profilePicture ? (
+                    <img
+                      src={teamData.admin.profilePicture}
+                      alt={teamData.admin.userName}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-white font-semibold">
+                      {teamData.admin?.userName?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-foreground">{teamData.admin?.userName}</div>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{teamData.admin?.email}</span>
+                    </div>
+                    {teamData.admin?.company && (
+                      <div className="text-sm text-muted-foreground mt-1">{teamData.admin.company}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Invitations List */}
+              <div>
+                <h4 className="font-semibold text-foreground mb-3">Team Members & Invitations</h4>
+                {teamData.invitations && teamData.invitations.length > 0 ? (
+                  <div className="space-y-2">
+                    {teamData.invitations.map((invitation: any, idx: number) => (
+                      <div key={idx} className="border border-border rounded-lg p-3 bg-card hover:bg-accent/50 transition-colors">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            {invitation.profilePicture ? (
+                              <img
+                                src={invitation.profilePicture}
+                                alt={invitation.userName}
+                                className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-secondary to-secondary/50 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                                {invitation.userName?.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-foreground text-sm">{invitation.userName}</div>
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                                <Mail className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{invitation.email}</span>
+                              </div>
+                              {invitation.company && (
+                                <div className="text-xs text-muted-foreground mt-1">{invitation.company}</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0">
+                            {invitation.invitationStatus === 'accepted' ? (
+                              <Badge className="bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300 border-0 flex items-center gap-1">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Accepted
+                              </Badge>
+                            ) : invitation.invitationStatus === 'pending' ? (
+                              <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300 border-0 flex items-center gap-1">
+                                <Clock3 className="h-3 w-3" />
+                                Pending
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="border-red-200 text-red-700 bg-red-50 dark:bg-red-950/20 dark:border-red-800 dark:text-red-300 flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" />
+                                {invitation.invitationStatus}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                          {invitation.userType && (
+                            <Badge variant="secondary" className="text-xs">{invitation.userType}</Badge>
+                          )}
+                          {/* {invitation.isAdmin && (
+                            <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border-0 text-xs">Admin</Badge>
+                          )} */}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No team invitations yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Failed to load team data</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

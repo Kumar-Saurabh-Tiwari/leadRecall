@@ -1,13 +1,28 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { Logo } from '@/components/shared/Logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UserRole } from '@/types';
 
 export default function Register() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const urlRole = searchParams.get('role') as UserRole | null;
+  const defaultRole = urlRole || 'exhibitor';
+  const isRoleRestricted = !!urlRole;
+
+  const handleRoleChange = (v: string) => {
+    if (isRoleRestricted) return; // Don't allow role switching if restricted
+    if (v === 'exhibitor') {
+      navigate('/register-exhibitor');
+    } else if (v === 'attendee') {
+      navigate('/register-attendee');
+    }
+  };
 
   return (
     <div className="min-h-screen gradient-hero flex flex-col">
@@ -39,20 +54,25 @@ export default function Register() {
               <CardDescription>Start networking smarter today</CardDescription>
             </CardHeader>
             <CardContent>
+              {isRoleRestricted ? (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-medium text-blue-900">
+                    {defaultRole === 'exhibitor' ? 'Exhibitor Registration' : 'Attendee Registration'}
+                  </p>
+                </div>
+              ) : null}
               <Tabs 
-                defaultValue="exhibitor"
-                onValueChange={(v) => {
-                  if (v === 'exhibitor') {
-                    navigate('/register-exhibitor');
-                  } else if (v === 'attendee') {
-                    navigate('/register-attendee');
-                  }
-                }}
+                defaultValue={defaultRole}
+                onValueChange={handleRoleChange}
                 className="w-full"
               >
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="exhibitor">Exhibitor</TabsTrigger>
-                  <TabsTrigger value="attendee">Attendee</TabsTrigger>
+                  <TabsTrigger value="exhibitor" disabled={isRoleRestricted && defaultRole !== 'exhibitor'}>
+                    Exhibitor
+                  </TabsTrigger>
+                  <TabsTrigger value="attendee" disabled={isRoleRestricted && defaultRole !== 'attendee'}>
+                    Attendee
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
             </CardContent>

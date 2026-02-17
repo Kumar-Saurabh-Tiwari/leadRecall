@@ -217,6 +217,34 @@ export const eventService = {
     return response.json();
   },
 
+  updateLeadEvent: async (eventId: string, data: unknown): Promise<unknown> => {
+    const response = await fetch(`${environment.apiUrl}/users/updateLeadEvent/${eventId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Anonymous': 'true',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  },
+
+  deleteLeadEvent: async (eventId: string): Promise<unknown> => {
+    const response = await fetch(`${environment.apiUrl}/users/deleteLeadEvent/${eventId}`, {
+      method: 'DELETE',
+      headers: {
+        'Anonymous': 'true',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  },
+
   async getDirectURL(file: File, mediaType: string = 'image'): Promise<string> {
     try {
       const formData = new FormData();
@@ -268,6 +296,19 @@ export const eventService = {
 
   getLeadUserByEmail: async (adminEmail: string): Promise<unknown> => {
     const response = await fetch(`${environment.apiUrl}/users/register-leaduser/${adminEmail}`, {
+      method: 'GET',
+      headers: {
+        'Anonymous': 'true',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  },
+
+  getAllEventTeamInvitations: async (eventId: string, adminEmail: string): Promise<unknown> => {
+    const response = await fetch(`${environment.apiUrl}/users/event-team-invitations/${eventId}?adminEmail=${adminEmail}`, {
       method: 'GET',
       headers: {
         'Anonymous': 'true',

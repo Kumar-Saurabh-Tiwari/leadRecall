@@ -20,12 +20,21 @@ export default function Login() {
   const { login, loginEmailOnly } = useAuth();
   const { toast } = useToast();
   
-  const initialRole = (searchParams.get('role') as UserRole) || 'exhibitor';
+  const urlRole = searchParams.get('role') as UserRole | null;
+  const initialRole = urlRole || 'exhibitor';
   const [role, setRole] = useState<UserRole>(initialRole);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loginMode, setLoginMode] = useState<'email-only' | 'password'>('email-only');
+  
+  // Restrict role switching if role is specified in URL
+  const isRoleRestricted = !!urlRole;
+  const handleRoleChange = (newRole: string) => {
+    if (!isRoleRestricted) {
+      setRole(newRole as UserRole);
+    }
+  };
 
   const handleEmailOnlyLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,12 +165,20 @@ export default function Login() {
               <CardDescription>Sign in to your account</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs value={role} onValueChange={(v) => setRole(v as UserRole)} className="mb-6">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="exhibitor">Exhibitor</TabsTrigger>
-                  <TabsTrigger value="attendee">Attendee</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              {isRoleRestricted ? (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-medium text-blue-900">
+                    {role === 'exhibitor' ? 'Exhibitor Login' : 'Attendee Login'}
+                  </p>
+                </div>
+              ) : (
+                <Tabs value={role} onValueChange={handleRoleChange} className="mb-6">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="exhibitor">Exhibitor</TabsTrigger>
+                    <TabsTrigger value="attendee">Attendee</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              )}
 
               {/* Login Mode Selector */}
               <div className="mb-6 flex gap-2">

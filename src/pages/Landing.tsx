@@ -319,7 +319,7 @@ export default function Landing() {
             <button onClick={() => scrollToSection('pricing')} className="text-foreground/80 hover:text-primary transition-colors">
               Pricing
             </button>
-            <Button onClick={() => navigate('/login')} className="ml-4 text-gray-700" style={{ background: 'linear-gradient(108.18deg, #EBCB42 0%, #FFEC99 50.7%, #EBCB42 97.5%)' }}>
+            <Button onClick={() => (window.location.href = 'https://mirecall-organizer-new-git-new-attendee-flow-mangalbazar.vercel.app/login')} className="ml-4 text-gray-700" style={{ background: 'linear-gradient(108.18deg, #EBCB42 0%, #FFEC99 50.7%, #EBCB42 97.5%)' }}>
               Get Started
             </Button>
           </div>
@@ -354,7 +354,7 @@ export default function Landing() {
               <button onClick={() => scrollToSection('pricing')} className="block w-full text-left text-foreground/80 hover:text-primary transition-colors">
                 Pricing
               </button>
-              <Button onClick={() => navigate('/login')} className="w-full text-gray-700" style={{ background: 'linear-gradient(108.18deg, #EBCB42 0%, #FFEC99 50.7%, #EBCB42 97.5%)' }}>
+              <Button onClick={() => (window.location.href = 'https://mirecall-organizer-new-git-new-attendee-flow-mangalbazar.vercel.app/login')} className="w-full text-gray-700" style={{ background: 'linear-gradient(108.18deg, #EBCB42 0%, #FFEC99 50.7%, #EBCB42 97.5%)' }}>
                 Get Started
               </Button>
             </div>
@@ -461,7 +461,7 @@ export default function Landing() {
           >
             <Button 
               size="lg" 
-              onClick={() => navigate('/login')} 
+              onClick={() => (window.location.href = 'https://mirecall-organizer-new-git-new-attendee-flow-mangalbazar.vercel.app/login')} 
               className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 h-auto font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-gray-700 w-full sm:w-auto" 
               style={{ background: 'linear-gradient(135deg, #EBCB42 0%, #FFEC99 50%, #EBCB42 100%)' }}
             >
@@ -834,7 +834,7 @@ export default function Landing() {
                           ? 'bg-white text-blue-700 hover:bg-white/90 shadow-lg'
                           : 'bg-primary text-primary-foreground hover:bg-primary/90'
                       }`}
-                      onClick={() => navigate('/login')}
+                      onClick={() => (window.location.href = 'https://mirecall-organizer-new-git-new-attendee-flow-mangalbazar.vercel.app/login')}
                     >
                       <Zap className="h-4 w-4" />
                       {tier.cta}

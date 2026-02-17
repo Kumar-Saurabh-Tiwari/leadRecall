@@ -403,7 +403,7 @@ export function MediaUploadDialog({
               exit={{ opacity: 0 }}
               className="space-y-4"
             >
-              <div className="relative aspect-[3/4] bg-muted rounded-lg overflow-hidden border-2 border-dashed border-border">
+              <div className="relative aspect-square bg-muted rounded-lg overflow-hidden border-2 border-dashed border-border">
                 <video
                   ref={videoRef}
                   autoPlay
@@ -451,7 +451,7 @@ export function MediaUploadDialog({
               exit={{ opacity: 0 }}
               className="space-y-4"
             >
-              <div className="relative aspect-[3/4] rounded-lg overflow-hidden border-2 border-border bg-secondary/30">
+              <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-border bg-secondary/30">
                 <img
                   src={previewImage}
                   alt="Preview"
