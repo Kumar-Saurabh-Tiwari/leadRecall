@@ -64,6 +64,12 @@ export default function LocationSelector({
   const autocompleteServiceRef = useRef<any>(null);
   const placesServiceRef = useRef<any>(null);
 
+  // Keep internal input in sync with parent-controlled `value` prop
+  useEffect(() => {
+    setInputValue(value);
+    setIsAddressSelected(!!value);
+  }, [value]);
+
   // Initialize Google Places Autocomplete Service
   useEffect(() => {
     if (typeof google !== 'undefined' && (window as any).google) {
@@ -199,9 +205,19 @@ export default function LocationSelector({
     setShowSuggestions(false);
     setIsAddressSelected(true);
 
+    // Inform parent immediately with the formatted address so the parent value updates without waiting
+    onChange(suggestion.formatted_address);
+
     // Get coordinates and address components for the selected location
-    const { coordinates, components } = await getPlaceDetails(suggestion.place_id);
-    onChange(suggestion.formatted_address, coordinates ?? undefined, components);
+    try {
+      const { coordinates, components } = await getPlaceDetails(suggestion.place_id);
+      // Update parent again with coords/components when available
+      onChange(suggestion.formatted_address, coordinates ?? undefined, components);
+    } catch (err) {
+      // still keep the selected address shown even if details fail
+      console.error('Failed to fetch place details:', err);
+    }
+
     setSuggestions([]);
   };
 

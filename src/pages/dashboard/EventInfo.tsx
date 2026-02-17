@@ -166,64 +166,59 @@ export default function EventInfo() {
       </div>
 
       {/* Event Header Card */}
-      <Card className="border-none shadow-md mb-8 bg-white overflow-hidden">
-        <div className="relative">
-          {/* Background Gradient */}
-          <div className="relative h-16 bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-100 overflow-hidden" />
+      <Card className="border-none shadow-lg mb-8 bg-white overflow-hidden">
+        {/* Top Action Buttons */}
+        <div className="bg-gradient-to-r from-orange-50 to-orange-100/50 px-6 py-4 flex gap-3 justify-end border-b border-orange-200/50">
+          <Button
+            size="sm"
+            className="gradient-primary shadow-md hover:shadow-lg transition-all duration-200 rounded-full px-5 py-2.5 font-semibold text-dark border-0 hover:scale-105"
+            onClick={() => navigate('/dashboard/add/event', { state: { eventToEdit: event } })}
+          >
+            <Edit2 className="h-4 w-4 mr-2" />
+            Edit Event
+          </Button>
 
-          {/* Floating action buttons (top-right) */}
-          <div className="absolute right-4 top-4 z-20 flex items-center gap-3">
-            <Button
-              size="sm"
-              className="gradient-primary shadow-lg hover:shadow-xl transition-all rounded-full px-4 py-2.5"
-              onClick={() => navigate('/dashboard/add/event', { state: { eventToEdit: event } })}
-            >
-              <Edit2 className="h-4 w-4 mr-2" />
-              Edit Event
-            </Button>
+          <Button
+            size="sm"
+            className="shadow-md hover:shadow-lg transition-all duration-200 rounded-full px-5 py-2.5 font-semibold border-2 border-orange-300 bg-white text-orange-700 hover:bg-orange-50 hover:scale-105"
+            onClick={() => {
+              setIsEventTeamDialogOpen(true);
+              fetchEventTeamData();
+            }}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Event Team
+          </Button>
+        </div>
 
-            <Button
-              size="sm"
-              variant="outline"
-              className="shadow-sm hover:shadow-md transition-shadow rounded-full px-3 py-2.5 bg-white/90"
-              onClick={() => {
-                setIsEventTeamDialogOpen(true);
-                fetchEventTeamData();
-              }}
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Event Team
-            </Button>
-          </div>
-
-          {/* Content Overlay */}
-          <div className="relative px-6 pb-6 pt-0 -mt-2 flex gap-4 items-end">
+        {/* Event Content */}
+        <div className="p-6">
+          <div className="flex gap-6 items-start">
             {/* Event Image */}
-            <div className="flex-shrink-0 relative z-10">
+            <div className="flex-shrink-0">
               {event.image ? (
                 <img 
                   src={event.image} 
                   alt={event.name} 
-                  className="w-24 h-24 rounded-2xl object-cover shadow-lg border-4 border-white"
+                  className="w-24 h-24 rounded-xl object-cover shadow-md border border-gray-100"
                 />
               ) : (
-                <div className="w-24 h-24 rounded-2xl bg-gray-300 shadow-lg border-4 border-white" />
+                <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-gray-300 to-gray-400 shadow-md border border-gray-100" />
               )}
             </div>
 
-            {/* Event Details */}
-            <div className="flex-1 pb-2">
-              {event.organizer && (
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  {event.organizer}
-                </p>
-              )}
-              <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-2">{event.name}</h1>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-orange-100 text-orange-700 font-semibold border-0 rounded-full text-xs">
-                  Upcoming Event
-                </Badge>
+            {/* Event Info */}
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{event.name}</h1>
+              
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Organized By:</span>
+                <span className="text-base font-bold text-orange-600">{event.organizer || (event as any).sOrganizer || 'N/A'}</span>
               </div>
+
+              {/* <Badge className="bg-orange-100 text-orange-700 font-semibold border-0 rounded-full px-3 py-1 text-xs">
+                Upcoming Event
+              </Badge> */}
             </div>
           </div>
         </div>

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Upload, Calendar, MapPin, Briefcase, Users, FileText, Clock, Lock, Ticket, Trash2 } from 'lucide-react';
+import { ArrowLeft, Upload, Calendar, MapPin, Users, FileText, Clock, Lock, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { eventService } from '@/services/eventService';
@@ -36,6 +36,7 @@ export default function AddEvent() {
   const [formData, setFormData] = useState({
     eventTitle: eventToEdit?.name || '',
     venueName: eventToEdit?.locationName || '',
+    host: eventToEdit?.organizer || '',
     address1: eventToEdit?.location || '',
     address2: '',
     city: '',
@@ -48,9 +49,7 @@ export default function AddEvent() {
     startTime: eventToEdit?.date ? new Date(eventToEdit.date).toTimeString().split(' ')[0].slice(0, 5) : '',
     endDate: eventToEdit?.endDate ? new Date(eventToEdit.endDate).toISOString().split('T')[0] : '',
     endTime: eventToEdit?.endDate ? new Date(eventToEdit.endDate).toTimeString().split(' ')[0].slice(0, 5) : '',
-    bEventPrivate: true,
-    ticketRequired: false,
-    costPerTicket: '',
+    bIsPublic: eventToEdit?.bIsPublic ?? eventToEdit?.isPublic ?? false,
   });
 
   const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -201,15 +200,6 @@ export default function AddEvent() {
       return;
     }
 
-    if (!formData.city.trim()) {
-      toast({
-        title: 'Error',
-        description: 'City is required',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     if (!formData.startDate || !formData.startTime) {
       toast({
         title: 'Error',
@@ -223,15 +213,6 @@ export default function AddEvent() {
       toast({
         title: 'Error',
         description: 'End date and time are required',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (formData.ticketRequired && !formData.costPerTicket.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Cost per ticket is required when tickets are enabled',
         variant: 'destructive',
       });
       return;
@@ -295,8 +276,11 @@ export default function AddEvent() {
         dStartDate: startDateTime || (isEditMode && eventToEdit?.date ? new Date(eventToEdit.date).toISOString() : ''),
         dEndDate: endDateTime || (isEditMode && eventToEdit?.endDate ? new Date(eventToEdit.endDate).toISOString() : ''),
         sLogo: sMediaUrl || '',
+        sOrganizer: formData.host || eventToEdit?.organizer || '',
+        bIsPublic: formData.bIsPublic,
         adminEmail: user?.email || '',
         sLocationPhysical: formData.address1 || eventToEdit?.location || '',
+        sVenueName: formData.venueName || eventToEdit?.locationName || '',
         sShortDescription: formData.additionalNotes || eventToEdit?.description || '',
         ...(locationCoords && {
           dLocationCoordinates: `${locationCoords.lat},${locationCoords.lng}`
@@ -496,6 +480,23 @@ export default function AddEvent() {
                     />
                   </div>
 
+                  {/* Host */}
+                  <div>
+                    <Label htmlFor="host" className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <Users className="h-4 w-4 text-primary" />
+                      Host
+                    </Label>
+                    <Input
+                      id="host"
+                      name="host"
+                      type="text"
+                      placeholder="e.g., John Doe or Company"
+                      value={formData.host}
+                      onChange={handleInputChange}
+                      className="bg-secondary/50 border-border/50 focus:ring-primary"
+                    />
+                  </div>
+
                   {/* Location Selector with Google Maps Integration */}
                   <LocationSelector
                     value={formData.address1}
@@ -508,7 +509,7 @@ export default function AddEvent() {
                   />
 
                   {/* City & Postcode */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="city" className="text-sm font-medium mb-2">
                         City <span className="text-destructive">*</span>
@@ -537,7 +538,7 @@ export default function AddEvent() {
                         className="bg-secondary/50 border-border/50 focus:ring-primary"
                       />
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Event Page URL */}
                   <div>
@@ -667,68 +668,53 @@ export default function AddEvent() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  {/* Privacy Toggle */}
-                  <div className="flex items-center justify-between p-4 rounded-lg border border-border/30 bg-secondary/30">
-                    <div className="flex items-center gap-3">
-                      <Lock className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">Private Event</p>
-                        <p className="text-xs text-muted-foreground">Only invited guests can attend</p>
-                      </div>
-                    </div>
-                    <Checkbox
-                      checked={formData.bEventPrivate}
-                      onCheckedChange={(checked) =>
-                        setFormData(prev => ({ ...prev, bEventPrivate: checked as boolean }))
-                      }
-                      className="h-5 w-5"
-                    />
-                  </div>
+                  {/* Event Privacy (public / private) - improved UI */}
+                  <div className="pt-1">
+                    <Label className="text-sm font-medium mb-3 block text-foreground">Event Privacy</Label>
 
-                  {/* Ticket Required Toggle */}
-                  <div className="border-t border-border/30 pt-5">
-                    <div className="flex items-center justify-between p-4 rounded-lg border border-border/30 bg-secondary/30">
-                      <div className="flex items-center gap-3">
-                        <Ticket className="h-5 w-5 text-primary" />
+                    <RadioGroup
+                      value={formData.bIsPublic ? 'public' : 'private'}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, bIsPublic: value === 'public' }))}
+                      className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                    >
+                      {/* Public option */}
+                      <div
+                        role="button"
+                        onClick={() => setFormData(prev => ({ ...prev, bIsPublic: true }))}
+                        className={`flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${formData.bIsPublic ? 'border-primary bg-primary/5 shadow-sm' : 'border-border/30 bg-transparent hover:border-primary/50'}`}
+                      >
+                        <div className="mt-1 flex-shrink-0">
+                          <RadioGroupItem value="public" id="privacy-public" />
+                        </div>
                         <div>
-                          <p className="text-sm font-semibold text-foreground">Ticket Required</p>
-                          <p className="text-xs text-muted-foreground">Charge attendees to register</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold">Public</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">Anyone can find and attend</p>
                         </div>
                       </div>
-                      <Checkbox
-                        checked={formData.ticketRequired}
-                        onCheckedChange={(checked) =>
-                          setFormData(prev => ({ ...prev, ticketRequired: checked as boolean }))
-                        }
-                        className="h-5 w-5"
-                      />
-                    </div>
 
-                    {/* Cost Per Ticket - Only show if ticketRequired is true */}
-                    {formData.ticketRequired && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="mt-4"
+                      {/* Private option */}
+                      <div
+                        role="button"
+                        onClick={() => setFormData(prev => ({ ...prev, bIsPublic: false }))}
+                        className={`flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${!formData.bIsPublic ? 'border-primary bg-primary/5 shadow-sm' : 'border-border/30 bg-transparent hover:border-primary/50'}`}
                       >
-                        <Label htmlFor="costPerTicket" className="text-sm font-medium mb-2">
-                          Cost Per Ticket <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                          id="costPerTicket"
-                          name="costPerTicket"
-                          type="number"
-                          placeholder="e.g., 50.00"
-                          step="0.01"
-                          min="0"
-                          value={formData.costPerTicket}
-                          onChange={handleInputChange}
-                          className="bg-secondary/50 border-border/50 focus:ring-primary"
-                        />
-                      </motion.div>
-                    )}
+                        <div className="mt-1 flex-shrink-0">
+                          <RadioGroupItem value="private" id="privacy-private" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold">Private</span>
+                            <span className="text-xs text-muted-foreground ml-2">Only invited guests</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">Only invited guests can attend</p>
+                        </div>
+                      </div>
+                    </RadioGroup>
                   </div>
+
+
                 </CardContent>
               </Card>
             </motion.div>

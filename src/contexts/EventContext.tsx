@@ -35,9 +35,11 @@ export function EventProvider({ children }: { children: ReactNode }) {
     date: new Date(apiEvent.dStartDate),
     endDate: apiEvent.dEndDate ? new Date(apiEvent.dEndDate) : undefined,
     location: apiEvent.sLocationPhysical,
+    locationName: apiEvent.sLocationName,
     role: user?.role || 'attendee',
     description: apiEvent.sShortDescription,
     image: apiEvent.sLogo,
+    organizer: apiEvent.sOrganizer,
   });
 
   const fetchEvents = useCallback(async (forceRefresh: boolean = false) => {
