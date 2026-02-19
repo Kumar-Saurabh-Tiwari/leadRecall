@@ -50,7 +50,7 @@ export interface Entry {
   company: string;
   event: string;
   notes: string;
-  type: UserRole;
+  type: 'exhibitor' | 'attendee' | 'content';
   createdAt: Date;
   linkedin?: string;
   profileUrl?: string;

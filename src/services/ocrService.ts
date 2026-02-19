@@ -44,6 +44,31 @@ class OCRService {
       throw error;
     }
   }
+  /**
+   * Detect text from an image using vision API
+   */
+    //     const data = new FormData();
+    //   formData.append('image', this.capturedImageFile);
+  async detectTexts(data: FormData): Promise<OCRResult> {
+    try {
+      const response = await fetch(`${this.apiUrl}/media/vision/detect-texts`, {
+        method: 'POST',
+        headers: {
+          'Anonymous': 'true'
+        },
+        body: data
+      });
+
+      if (!response.ok) {
+        throw new Error(`OCR detection failed: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('OCR detection error:', error);
+      throw error;
+    }
+  }
 
   async getDirectURL(file: File, mediaType: string = 'image'): Promise<string> {
     try {

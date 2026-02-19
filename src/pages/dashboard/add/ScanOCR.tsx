@@ -16,6 +16,8 @@ interface ExtractedContact {
   website?: string;
   job_title?: string;
   company?: string;
+  // raw OCR text (for text-scan mode)
+  text?: string;
 }
 
 export default function ScanOCR() {
@@ -39,13 +41,18 @@ export default function ScanOCR() {
   // Determine what type of contact the user can add based on their role
   const targetType = user?.role === 'exhibitor' ? 'Attendee' : 'Exhibitor';
 
-  // Capture selected event from navigation state
+  // Capture selected event and optional scan mode from navigation state
   useEffect(() => {
-    const state = location.state as { selectedEvent?: { eventId: string; eventName: string } } | null;
+    const state = location.state as { selectedEvent?: { eventId: string; eventName: string }; scanMode?: string } | null;
     if (state?.selectedEvent) {
       setSelectedEvent(state.selectedEvent);
     }
   }, [location.state]);
+
+  // Determine scan mode (card | text)
+  const navState = (location.state || {}) as { scanMode?: 'card' | 'text'; returnTo?: string };
+  const scanMode = navState.scanMode || 'card';
+  const returnTo = navState.returnTo;
 
   // Initialize camera stream
   const initializeCamera = async () => {
@@ -54,7 +61,7 @@ export default function ScanOCR() {
         video: { facingMode: 'environment' },
         audio: false,
       });
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
@@ -95,7 +102,7 @@ export default function ScanOCR() {
       // Get preview image first
       const previewDataUrl = canvasRef.current.toDataURL('image/jpeg', 0.95);
       setPreviewImage(previewDataUrl);
-      
+
       // Stop camera and show preview with Scan/Retry buttons
       stopCamera();
       setImageReady(true);
@@ -116,12 +123,17 @@ export default function ScanOCR() {
     try {
       const formData = new FormData();
       formData.append('image', blob);
+      let result: any = null;
+      if (scanMode === 'card') {
+        result = await ocrService.detectLabels(formData);
+      } else {
+        result = await ocrService.detectTexts(formData);
+      }
 
-      const result = await ocrService.detectLabels(formData);
-      
       console.log('OCR Service Result:', result);
-      
+
       // Initialize with empty contact data
+      // prefer `formatted` text (server may return both `text` and `formatted`)
       let contactData: ExtractedContact = {
         name: '',
         email: '',
@@ -129,19 +141,20 @@ export default function ScanOCR() {
         address: '',
         website: '',
         job_title: '',
-        company: ''
+        company: '',
+        text: result?.formatted || result?.text || ''
       };
 
       // Check if result already has structured contact fields
       if (result && typeof result === 'object') {
         // Use directly returned fields if they exist
-        contactData.name = result.name?.trim() || '';
-        contactData.email = result.email?.trim() || '';
-        contactData.phone = result.phone?.trim() || '';
-        contactData.address = result.address?.trim() || '';
-        contactData.website = result.website?.trim() || '';
-        contactData.job_title = result.job_title?.trim() || '';
-        contactData.company = result.company?.trim() || '';
+        contactData.name = result.name?.trim() || contactData.name || '';
+        contactData.email = result.email?.trim() || contactData.email || '';
+        contactData.phone = result.phone?.trim() || contactData.phone || '';
+        contactData.address = result.address?.trim() || contactData.address || '';
+        contactData.website = result.website?.trim() || contactData.website || '';
+        contactData.job_title = result.job_title?.trim() || contactData.job_title || '';
+        contactData.company = result.company?.trim() || contactData.company || '';
       }
 
       // If no data extracted, try parsing from text field
@@ -157,9 +170,9 @@ export default function ScanOCR() {
       if (result?.labels && result.labels.length > 0) {
         console.log('Detected labels:', result.labels);
       }
-      
+
       console.log('Extracted Contact Data:', contactData);
-      
+
       return contactData;
     } catch (error) {
       console.error('OCR Service Error:', error);
@@ -215,7 +228,7 @@ export default function ScanOCR() {
       const reader = new FileReader();
       reader.onload = (e) => {
         const base64Data = e.target?.result as string;
-        
+
         console.log('Image uploaded - Base64 Data:', base64Data);
         console.log('Image file details:', {
           name: file.name,
@@ -257,7 +270,7 @@ export default function ScanOCR() {
         img.onabort = () => {
           console.error('Image load aborted');
         };
-        
+
         console.log('Setting image source...');
         img.src = base64Data;
       };
@@ -278,7 +291,7 @@ export default function ScanOCR() {
         variant: 'destructive',
       });
     }
-    
+
     // Reset file input
     event.target.value = '';
   };
@@ -292,7 +305,7 @@ export default function ScanOCR() {
       // If uploaded file exists, use it directly (File extends Blob)
       if (uploadedFile) {
         imageBlob = uploadedFile;
-      } 
+      }
       // Otherwise use canvas for captured photo
       else if (canvasRef.current) {
         imageBlob = await new Promise<Blob | null>((resolve) => {
@@ -378,23 +391,35 @@ export default function ScanOCR() {
         }
       }
 
-      console.log('Navigating to AddContact with OCR data:', extractedData, 'Media URL:', mediaUrl);
+      console.log('OCR navigation target check — mode:', scanMode, 'returnTo:', returnTo);
 
       toast({
-        title: 'Redirecting to Form',
-        description: 'Fill in additional details and save the contact',
+        title: 'Redirecting',
+        description: scanMode === 'text' ? 'Opening content editor with extracted text' : 'Opening contact form with extracted data',
       });
 
-      // Navigate to AddContact page with extracted data
+      // Choose navigation based on scanMode and optional returnTo
       setTimeout(() => {
-        navigate('/dashboard/add/manual', {
-          state: {
-            ocrData: extractedData,
-            selectedEvent: selectedEvent,
-            scannedViaOCR: true,
-            mediaUrl: mediaUrl
-          }
-        });
+        if (scanMode === 'text') {
+          const target = returnTo || '/dashboard/add/content/editor';
+          navigate(target, {
+            state: {
+              ocrText: extractedData?.text || extractedData?.name || '',
+              mediaUrl,
+              selectedEvent,
+            },
+          });
+        } else {
+          const target = returnTo || '/dashboard/add/manual';
+          navigate(target, {
+            state: {
+              ocrData: extractedData,
+              selectedEvent,
+              scannedViaOCR: true,
+              mediaUrl,
+            },
+          });
+        }
       }, 500);
 
       setIsSaving(false);
@@ -436,8 +461,8 @@ export default function ScanOCR() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-xl font-bold text-foreground">Scan Business Card</h1>
-          <p className="text-sm text-muted-foreground">Add {targetType} via OCR</p>
+          <h1 className="text-xl font-bold text-foreground">{scanMode === 'text' ? 'Scan Text / Document' : 'Scan Business Card'}</h1>
+          <p className="text-sm text-muted-foreground">{scanMode === 'text' ? 'Extract text via OCR' : `Add ${targetType} via OCR`}</p>
         </div>
       </div>
 
@@ -447,9 +472,11 @@ export default function ScanOCR() {
           <div className="mx-auto h-16 w-16 rounded-2xl gradient-primary flex items-center justify-center mb-4 shadow-soft">
             <ScanText className="h-8 w-8 text-primary-foreground" />
           </div>
-          <CardTitle>Scan {targetType} Card</CardTitle>
+          <CardTitle>{scanMode === 'text' ? 'Scan Document / Image' : `Scan ${targetType} Card`}</CardTitle>
           <CardDescription>
-            Take a photo or upload an image of the {targetType.toLowerCase()}'s business card to extract contact info automatically
+            {scanMode === 'text'
+              ? 'Take a photo or upload an image to extract plain text via OCR.'
+              : `Take a photo or upload an image of the ${targetType.toLowerCase()}'s business card to extract contact info automatically`}
           </CardDescription>
         </CardHeader>
 
@@ -486,7 +513,7 @@ export default function ScanOCR() {
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
                     <div className="text-center space-y-3">
                       <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto" />
-                      <p className="text-sm text-white font-medium">Processing card...</p>
+                      <p className="text-sm text-white font-medium">{scanMode === 'text' ? 'Processing text...' : 'Processing card...'}</p>
                     </div>
                   </div>
                 ) : null}
@@ -501,22 +528,33 @@ export default function ScanOCR() {
                 {isProcessing ? (
                   <div className="text-center space-y-3">
                     <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto" />
-                    <p className="text-sm text-muted-foreground">Processing card...</p>
+                    <p className="text-sm text-muted-foreground">{scanMode === 'text' ? 'Processing text...' : 'Processing card...'}</p>
                   </div>
                 ) : (
                   <div className="text-center space-y-3 p-6">
                     <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto" />
                     <p className="text-sm text-muted-foreground">
-                      Business card preview will appear here
+                      {scanMode === 'text' ? 'Document preview will appear here' : 'Business card preview will appear here'}
                     </p>
                   </div>
                 )}
               </div>
-            )}
+            )} 
           </div>
 
-          {/* Extracted Contact Data */}
-          {extractedData && (
+          {/* Extracted OCR Result (contact fields OR text) */}
+          {extractedData && scanMode === 'text' ? (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Extracted Text</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="prose max-h-40 overflow-auto text-sm whitespace-pre-wrap p-3 bg-background/50 rounded">
+                  {extractedData.text || 'No text extracted'}
+                </div>
+              </CardContent>
+            </Card>
+          ) : extractedData ? (
             <Card className="border-primary/20 bg-primary/5">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Extracted Information</CardTitle>
@@ -587,7 +625,7 @@ export default function ScanOCR() {
                 )}
               </CardContent>
             </Card>
-          )}
+          ) : null}
 
           {/* Actions */}
           <div className="grid grid-cols-2 gap-3">
@@ -604,7 +642,7 @@ export default function ScanOCR() {
                   ) : (
                     <>
                       <ArrowRight className="h-4 w-4" />
-                      Continue
+                      {scanMode === 'text' ? 'Use Text' : 'Continue'}
                     </>
                   )}
                 </Button>

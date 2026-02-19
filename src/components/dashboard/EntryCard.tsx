@@ -48,12 +48,14 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
             <div className="absolute top-3 right-3">
               <Badge 
                 className={`shadow-md border border-white/20 font-semibold text-xs px-3 py-1 ${
-                  entry.type === 'exhibitor' 
+                  entry.type === 'content'
+                    ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white'
+                    : entry.type === 'exhibitor' 
                     ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white' 
                     : 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white'
                 }`}
               >
-                {entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee'}
+                {entry.type === 'content' ? 'Content' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee')}
               </Badge>
             </div>
           </div>
@@ -150,7 +152,7 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
               variant="secondary" 
               className="absolute top-2 right-2 text-[10px] px-1.5 py-0 h-5 bg-background/80 backdrop-blur-sm border-none font-medium text-foreground"
             >
-              {entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee'}
+              {entry.type === 'content' ? 'Content' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee')}
             </Badge>
           </div>
           
@@ -222,10 +224,10 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
               <div className="absolute bottom-1.5 left-1.5 right-1.5">
                  <div className="flex items-center gap-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-2 py-1 rounded-full border border-slate-200/50 dark:border-slate-800/50 shadow-sm">
                     <div className="bg-primary/10 p-0.5 rounded-full">
-                       {entry.type === 'exhibitor' ? <Building2 className="h-3 w-3 text-primary" /> : <User className="h-3 w-3 text-primary" />}
+                       {entry.type === 'content' ? <User className="h-3 w-3 text-primary" /> : (entry.type === 'exhibitor' ? <Building2 className="h-3 w-3 text-primary" /> : <User className="h-3 w-3 text-primary" />)}
                     </div>
                     <span className="text-[10px] font-extrabold text-slate-700 dark:text-slate-200 uppercase tracking-tight">
-                      {entry.type === 'exhibitor' ? 'Exhibitor' : 'Contact'}
+                      {entry.type === 'content' ? 'Content' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Contact')}
                     </span>
                     {/* <div className="ml-auto bg-green-600 text-[9px] text-white w-4 h-4 rounded-full flex items-center justify-center font-black">
                       {entry.notes ? '1' : '3'}
@@ -243,7 +245,7 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
                   </h3>
                 </div>
                 <p className="text-[12px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5 truncate uppercase tracking-tight">
-                  {entry.role ? `${entry.role} @ ` : ''}{entry.company || 'Private Participant'}
+                  {entry.role ? `${entry.role} @ ` : ''}{entry.company}
                 </p>
               </div>
 
@@ -334,7 +336,7 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
             
             {/* Badge */}
             <Badge variant="outline" className="text-xs mb-2">
-              {entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee'}
+              {entry.type === 'content' ? 'Content' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee')}
             </Badge>
           </div>
           

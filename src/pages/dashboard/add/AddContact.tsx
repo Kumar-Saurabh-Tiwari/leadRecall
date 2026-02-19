@@ -60,7 +60,7 @@ interface ContactFormData {
     sProfileLink: string;
     sProfileType: string;
   }>;
-  notes: string;
+  sNotes: string;
 }
 
 export default function AddContact() {
@@ -89,7 +89,7 @@ export default function AddContact() {
 
   // Get selected event and OCR data from navigation state
   useEffect(() => {
-    const state = location.state as LocationState;
+    const state = location.state as LocationState & { ocrText?: string };
     if (state?.selectedEvent) {
       setSelectedEventData(state.selectedEvent);
       setEvent(state.selectedEvent.eventName);
@@ -127,6 +127,12 @@ export default function AddContact() {
         setNotes(`Scanned via QR Code${state.qrFullData?.sEventName ? `\nEvent: ${state.qrFullData.sEventName}` : ''}${state.qrFullData?.sAttendeeId ? `\nAttendee ID: ${state.qrFullData.sAttendeeId}` : ''}`);
       }
     }
+
+    // If the OCR scan returned plain text (text-scan), append to notes
+    if (state?.ocrText) {
+      setNotes(prev => (prev ? prev + '\n' + state.ocrText : state.ocrText || ''));
+    }
+
     if (state?.mediaUrl) {
       setMediaUrl(state.mediaUrl);
     }
@@ -223,7 +229,7 @@ export default function AddContact() {
             sProfileType: 'linkedin'
           }
         ],
-        notes: notes.trim()
+        sNotes: notes.trim()
       };
       
       console.log('Creating contact with structured data:', contactDetails);
@@ -583,6 +589,11 @@ export default function AddContact() {
         open={showMediaDialog}
         onClose={() => setShowMediaDialog(false)}
         onMediaUpload={handleMediaUpload}
+        onScanChoice={(mode) => {
+          // close dialog and redirect to OCR scanner; ask it to return to AddContact when done
+          setShowMediaDialog(false);
+          navigate('/dashboard/add/scan-ocr', { state: { selectedEvent: selectedEventData, scanMode: mode, returnTo: '/dashboard/add/manual' } });
+        }}
         title="Add Contact Photo"
         description="Take a photo with your camera or upload one from your device"
         getDirectURL={getMediaUploadService().getDirectURL.bind(getMediaUploadService())}

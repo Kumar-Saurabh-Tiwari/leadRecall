@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Camera, Upload, X, Loader2, ChevronLeft } from 'lucide-react';
+import { Camera, Upload, X, Loader2, ChevronLeft, ScanText, FileText } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,8 @@ interface MediaUploadDialogProps {
   title?: string;
   description?: string;
   getDirectURL: (file: File, mediaType: string) => Promise<string>;
+  // optional handler when user wants to perform an OCR scan instead of uploading
+  onScanChoice?: (mode: 'text' | 'card') => void;
 }
 
 export function MediaUploadDialog({
@@ -35,6 +37,7 @@ export function MediaUploadDialog({
   title = 'Upload Contact Photo',
   description = 'Add a photo to this contact',
   getDirectURL,
+  onScanChoice,
 }: MediaUploadDialogProps) {
   const [step, setStep] = useState<'choose' | 'camera' | 'result'>('choose');
   const [cameraActive, setCameraActive] = useState(false);
@@ -315,8 +318,9 @@ export function MediaUploadDialog({
         description: 'Contact photo has been uploaded successfully.',
       });
 
+      // Notify parent with the uploaded media URL. Parent navigation/state should close this dialog —
+      // do NOT call handleClose() here to avoid overriding parent's navigation (was causing a redirect to /dashboard).
       onMediaUpload(mediaUrl);
-      handleClose();
     } catch (error: any) {
       console.error('Upload error:', error);
       const errorMessage = error?.message || 'Failed to upload photo. Please try again.';
@@ -390,6 +394,31 @@ export function MediaUploadDialog({
               >
                 <Upload className="h-6 w-6" />
                 <span className="text-xs">Upload Photo</span>
+              </Button>
+
+              {/* New scan options: Text scan & Business card scan */}
+              <Button
+                onClick={() => {
+                  // let parent handle navigation/closing so it can pass state (returnTo / selectedEvent / etc.)
+                  onScanChoice?.('text');
+                }}
+                variant="outline"
+                className="h-24 flex flex-col gap-2"
+              >
+                <FileText className="h-6 w-6" />
+                <span className="text-xs">Text Scan</span>
+              </Button>
+
+              <Button
+                onClick={() => {
+                  // let parent handle navigation/closing so it can pass state (returnTo / selectedEvent / etc.)
+                  onScanChoice?.('card');
+                }}
+                variant="outline"
+                className="h-24 flex flex-col gap-2"
+              >
+                <ScanText className="h-6 w-6" />
+                <span className="text-xs">Scan Business Card</span>
               </Button>
             </motion.div>
           )}

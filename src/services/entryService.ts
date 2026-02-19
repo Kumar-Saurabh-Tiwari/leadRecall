@@ -110,6 +110,7 @@ export const entryService = {
     const token = localStorage.getItem('authToken');
     return {
       'Authorization': `Bearer ${token}`,
+      'Anonymous': 'true',
       'Content-Type': 'application/json'
     };
   },
@@ -259,6 +260,30 @@ export const entryService = {
         ...this.getAuthHeaders()
       },
       body: JSON.stringify(data)
+    });
+    return response.json();
+  },
+
+  async addAdditionalMedia(data: any, mediaType: string): Promise<any> {
+    const response = await fetch(`${hostUrl}/media/additional-media/trade-show/${mediaType}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.getAuthHeaders()
+      },
+      body: JSON.stringify(data)
+    });
+    return response.json();
+  },
+
+  async getAdditionalMedia(filterData: any): Promise<any> {
+    const response = await fetch(`${hostUrl}/profile/get-additional-media-records`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.getAuthHeaders()
+      },
+      body: JSON.stringify(filterData)
     });
     return response.json();
   }

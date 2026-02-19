@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, QrCode, UserPlus, ScanText, Calendar, Check, MapPin, Clock, Zap, CheckCircle2 } from 'lucide-react';
+import { Plus, X, QrCode, UserPlus, ScanText, Calendar, Check, MapPin, Clock, Zap, CheckCircle2, FileText } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -60,34 +60,41 @@ const getTimelineGradient = (timeline: 'upcoming' | 'live' | 'past') => {
 };
 
 const addOptions: AddOption[] = [
-  {
-    id: 'scan-qr',
-    label: 'Scan QR For Contact',
-    description: 'Scan QR code to add contact',
-    icon: QrCode,
-    path: '/dashboard/add/scan-qr',
-  },
+  // {
+  //   id: 'scan-qr',
+  //   label: 'Scan QR For Contact',
+  //   description: 'Scan QR code to add contact',
+  //   icon: QrCode,
+  //   path: '/dashboard/add/scan-qr',
+  // },
   {
     id: 'add-manual',
-    label: 'Add Contact Manually',
+    label: 'Add Contact',
     description: 'Add contact manually',
     icon: UserPlus,
     path: '/dashboard/add/manual',
   },
   {
-    id: 'scan-ocr',
-    label: 'Scan OCR For Contact',
-    description: 'Scan business card',
-    icon: ScanText,
-    path: '/dashboard/add/scan-ocr',
+    id: 'add-content',
+    label: 'Add Content',
+    description: 'Add content manually',
+    icon: FileText,
+    path: '/dashboard/add/content',
   },
-  {
-    id: 'add-event',
-    label: 'Add New Event',
-    description: 'Create a new event',
-    icon: Calendar,
-    path: '/dashboard/add/event',
-  },
+  // {
+  //   id: 'scan-ocr',
+  //   label: 'Scan OCR For Contact',
+  //   description: 'Scan business card',
+  //   icon: ScanText,
+  //   path: '/dashboard/add/scan-ocr',
+  // },
+  // {
+  //   id: 'add-event',
+  //   label: 'Add New Event',
+  //   description: 'Create a new event',
+  //   icon: Calendar,
+  //   path: '/dashboard/add/event',
+  // },
 ];
 
 export function AddEntryFAB({ onEntryAdded }: { onEntryAdded?: () => void }) {

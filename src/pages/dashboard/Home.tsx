@@ -45,6 +45,7 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<SortOption>('latest');
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const fetchEntries = async () => {
@@ -72,28 +73,39 @@ export default function Home() {
       const dataArray = apiResponse?.data || apiResponse;
       if (dataArray && Array.isArray(dataArray)) {
         const transformedEntries: Entry[] = dataArray.map((item: any) => {
+          const isContent = item.eRecordType === "content";
+          const contactData = isContent ? item.oContentData : item.oContactData;
+          
           // Get first non-empty event title
-          const validEvent = item.oContactData?.sEventTitles?.find((evt: any) => evt.sTitle && evt.sTitle.trim());
+          const validEvent = contactData?.sEventTitles?.find((evt: any) => evt.sTitle && evt.sTitle.trim());
           
           // Get first non-N/A LinkedIn profile link
-          const linkedinProfile = item.oContactData?.profiles?.find((prof: any) => prof.sProfileLink && prof.sProfileLink !== 'N/A');
+          const linkedinProfile = contactData?.profiles?.find((prof: any) => prof.sProfileLink && prof.sProfileLink !== 'N/A');
+          
+          // For content type, use sPresentation as title; for contact type, use name
+          let name = 'Unknown';
+          if (isContent) {
+            name = contactData?.sPresentation?.sValue || contactData?.sPresentation?.sLabel || 'Unknown Content';
+          } else {
+            name = contactData ? 
+              `${contactData.sFirstName || ''} ${contactData.sLastName || ''}`.trim() : 
+              'Unknown';
+          }
           
           return {
             id: item._id || item.id || crypto.randomUUID(),
-            name: item.oContactData ? 
-              `${item.oContactData.sFirstName || ''} ${item.oContactData.sLastName || ''}`.trim() : 
-              'Unknown',
-            company: item.oContactData?.sCompany || 'Unknown Company',
+            name: name,
+            company: contactData?.sCompany || '',
             event: validEvent?.sTitle || 'Unknown Event',
-            notes: item.oContactData?.sEntryNotes?.[0] || '',
-            type: user.role === 'exhibitor' ? 'attendee' : 'exhibitor',
+            notes: isContent ? (contactData?.sNotes || '') : (contactData?.sEntryNotes?.[0] || ''),
+            type: isContent ? 'content' : (user.role === 'exhibitor' ? 'attendee' : 'exhibitor'),
             createdAt: item.dCreatedDate ? new Date(item.dCreatedDate) : new Date(),
-            email: item.oContactData?.sEmail?.[0]?.Email || undefined,
-            phone: item.oContactData?.contacts?.[0]?.sContactNumber || undefined,
+            email: contactData?.sEmail?.[0]?.Email || undefined,
+            phone: contactData?.contacts?.[0]?.sContactNumber || undefined,
             linkedin: linkedinProfile?.sProfileLink || undefined,
             profileUrl: undefined,
             image: item?.sMediaUrl,
-            role: item.oContactData?.sRole
+            role: contactData?.sRole
           };
         });
 
@@ -186,13 +198,16 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Optimized Header */}
-      <div className="px-5 pt-4 pb-3 sticky top-0 z-30 bg-background/90 backdrop-blur-xl border-b border-border/5">
+      <div className="px-5 pt-4 pb-3 sticky top-0 z-30 gradient-primary backdrop-blur-xl border-b border-border/5">
         <div className="flex flex-col gap-3">
-          {/* Top Row: Title, Count, View Switcher & Refresh */}
+          {/* Top Row: Title, Count, View Switcher, Refresh & Search Icon */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
+              <span>
+                <Building2 className="h-5 w-5 text-dark" />
+              </span>
               <h1 className="text-xl font-bold text-foreground tracking-tight">
-                Your Leads
+                Leads
               </h1>
               <span className="flex items-center justify-center bg-primary/10 text-dark text-[10px] font-black px-2 py-0.5 rounded-full border border-primary/20">
                 {filteredEntries.length}
@@ -204,21 +219,21 @@ export default function Home() {
               <div className="bg-muted/50 p-1 rounded-lg flex items-center border border-border/20 mr-1">
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-1 rounded-md transition-all ${viewMode === 'list' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground'}`}
+                  className={`p-1 rounded-md transition-all ${viewMode === 'list' ? 'bg-background text-dark shadow-sm' : 'text-primary-foreground'}`}
                   title="List View"
                 >
                   <List className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-1 rounded-md transition-all ${viewMode === 'grid' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground'}`}
+                  className={`p-1 rounded-md transition-all ${viewMode === 'grid' ? 'bg-background text-dark shadow-sm' : 'text-primary-foreground'}`}
                   title="Grid View"
                 >
                   <Grid2X2 className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('card')}
-                  className={`p-1 rounded-md transition-all ${viewMode === 'card' ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground'}`}
+                  className={`p-1 rounded-md transition-all ${viewMode === 'card' ? 'bg-background text-dark shadow-sm' : 'text-primary-foreground'}`}
                   title="Card View"
                 >
                   <CreditCard className="h-4 w-4" />
@@ -234,54 +249,75 @@ export default function Home() {
               >
                 <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               </Button>
+
+              {/* Search Toggle Icon */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+                className={`h-8 w-8 rounded-full transition-all ${isSearchExpanded ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-primary'}`}
+              >
+                {isSearchExpanded ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+              </Button>
             </div>
           </div>
 
-          {/* Bottom Row: Search & Filters */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <Input
-                placeholder="Search leads..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-3 bg-white border-none focus-visible:ring-1 focus-visible:ring-primary/20 h-10 rounded-xl text-sm transition-all"
-              />
-            </div>
+          {/* Bottom Row: Search & Filters - Expandable */}
+          <AnimatePresence>
+            {isSearchExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-2"
+              >
+                <div className="relative flex-1 group">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Input
+                    placeholder="Search leads..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoFocus
+                    className="pl-9 pr-3 bg-white border-none focus-visible:ring-1 focus-visible:ring-primary/20 h-10 rounded-xl text-sm transition-all"
+                  />
+                </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-none bg-muted/40 text-muted-foreground hover:text-primary transition-colors shrink-0">
-                  <SlidersHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl shadow-xl border-border/50">
-                <DropdownMenuLabel className="px-3 pt-2 pb-1 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Sort Options</DropdownMenuLabel>
-                <DropdownMenuSeparator className="opacity-50" />
-                {Object.entries(SORT_OPTIONS).map(([key, label]) => (
-                  <DropdownMenuItem
-                    key={key}
-                    onClick={() => setSortBy(key as SortOption)}
-                    className={`rounded-xl px-3 py-2 cursor-pointer mb-0.5 ${sortBy === key ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted font-medium'}`}
-                  >
-                    {label}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator className="opacity-50 my-2" />
-                <DropdownMenuLabel className="px-3 pt-2 pb-1 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Filter By Role</DropdownMenuLabel>
-                <DropdownMenuSeparator className="opacity-50" />
-                {(['all', 'exhibitor', 'attendee'] as const).map((type) => (
-                  <DropdownMenuItem
-                    key={type}
-                    onClick={() => setFilterType(type)}
-                    className={`rounded-xl px-3 py-2 cursor-pointer mb-0.5 ${filterType === type ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted font-medium'}`}
-                  >
-                    {type === 'all' ? 'All Connections' : type.charAt(0).toUpperCase() + type.slice(1) + 's'}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-none bg-muted/40 text-muted-foreground hover:text-primary transition-colors shrink-0">
+                      <SlidersHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl shadow-xl border-border/50">
+                    <DropdownMenuLabel className="px-3 pt-2 pb-1 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Sort Options</DropdownMenuLabel>
+                    <DropdownMenuSeparator className="opacity-50" />
+                    {Object.entries(SORT_OPTIONS).map(([key, label]) => (
+                      <DropdownMenuItem
+                        key={key}
+                        onClick={() => setSortBy(key as SortOption)}
+                        className={`rounded-xl px-3 py-2 cursor-pointer mb-0.5 ${sortBy === key ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted font-medium'}`}
+                      >
+                        {label}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator className="opacity-50 my-2" />
+                    <DropdownMenuLabel className="px-3 pt-2 pb-1 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Filter By Role</DropdownMenuLabel>
+                    <DropdownMenuSeparator className="opacity-50" />
+                    {(['all', 'exhibitor', 'attendee'] as const).map((type) => (
+                      <DropdownMenuItem
+                        key={type}
+                        onClick={() => setFilterType(type)}
+                        className={`rounded-xl px-3 py-2 cursor-pointer mb-0.5 ${filterType === type ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted font-medium'}`}
+                      >
+                        {type === 'all' ? 'All Connections' : type.charAt(0).toUpperCase() + type.slice(1) + 's'}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

@@ -23,7 +23,8 @@ import {
   BookOpen,
   Globe2,
   TrendingUp,
-  Target
+  Target,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +37,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEvents } from '@/contexts/EventContext';
 import { SafeImage } from '@/components/SafeImage';
+import { MediaTypeSelectionDialog } from '@/components/dashboard/MediaTypeSelectionDialog';
+import { MediaUploadDialog } from '@/components/dashboard/MediaUploadDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,10 +57,24 @@ export default function EntryDetail() {
   const { toast } = useToast();
   const [entry, setEntry] = useState<Entry | null>(null);
   const [profileAnalyzeData, setProfileAnalyzeData] = useState<any>(null);
+  const [contentData, setContentData] = useState<any>(null);
+  const [recordType, setRecordType] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
+  
+  // Media addition state
+  const [showMediaTypeDialog, setShowMediaTypeDialog] = useState(false);
+  const [showMediaUploadDialog, setShowMediaUploadDialog] = useState(false);
+  const [selectedMediaType, setSelectedMediaType] = useState<'picture' | 'text' | 'card' | null>(null);
+  const [capturedMediaImage, setCapturedMediaImage] = useState<string | null>(null);
+  const [extractedMediaData, setExtractedMediaData] = useState<any>(null);
+  
+  // View additional media state
+  const [additionalMedia, setAdditionalMedia] = useState<any[]>([]);
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false);
+  const [showMediaSection, setShowMediaSection] = useState(false);
 
   useEffect(() => {
     const fetchEntryDetail = async () => {
@@ -86,6 +103,13 @@ export default function EntryDetail() {
         // Check if response has data
         const itemData = apiResponse?.data || apiResponse;
         if (itemData && itemData._id) {
+          // Extract record type and content data if present
+          if (itemData.eRecordType) {
+            setRecordType(itemData.eRecordType);
+          }
+          if (itemData.oContentData) {
+            setContentData(itemData.oContentData);
+          }
           // Get first non-empty event title
           const validEvent = itemData.oContactData?.sEventTitles?.find((evt: any) => evt.sTitle && evt.sTitle.trim());
           
@@ -97,7 +121,7 @@ export default function EntryDetail() {
             name: itemData.oContactData ? 
               `${itemData.oContactData.sFirstName || ''} ${itemData.oContactData.sLastName || ''}`.trim() : 
               'Unknown',
-            company: itemData.oContactData?.sCompany || 'Unknown Company',
+            company: itemData.oContactData?.sCompany || '',
             event: validEvent?.sTitle || 'Unknown Event',
             notes: itemData.oContactData?.sEntryNotes?.[0] || '',
             type: user.role === 'exhibitor' ? 'attendee' : 'exhibitor',
@@ -114,6 +138,8 @@ export default function EntryDetail() {
           if (itemData.oProfileAnalyzeData) {
             setProfileAnalyzeData(itemData.oProfileAnalyzeData);
           }
+          // Fetch additional media for this entry
+          fetchAdditionalMedia(itemData._id || itemData.id);
         } else {
           setError('Entry not found');
           navigate('/dashboard');
@@ -128,6 +154,26 @@ export default function EntryDetail() {
 
     fetchEntryDetail();
   }, [id, user?.role, user?.email, navigate]);
+
+  const fetchAdditionalMedia = async (entryId: string) => {
+    try {
+      setIsLoadingMedia(true);
+      const filterData = {
+        iRecordId: entryId,
+        userType: user?.role === 'exhibitor' ? 'exhibitor' : 'attendee',
+      };
+      const response = await entryService.getAdditionalMedia(filterData);
+      
+      // Handle the API response structure: { data: { records: [...] } }
+      const mediaArray = response?.data?.records || response?.records || [];
+      setAdditionalMedia(Array.isArray(mediaArray) ? mediaArray : []);
+    } catch (err) {
+      console.error('Error fetching additional media:', err);
+      setAdditionalMedia([]);
+    } finally {
+      setIsLoadingMedia(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!entry || !user?.email) return;
@@ -175,6 +221,58 @@ export default function EntryDetail() {
     if (url.startsWith('http')) {
       window.open(url, '_blank');
     }
+  };
+
+  const handleAddMediaClick = () => {
+    setShowMediaTypeDialog(true);
+  };
+
+  const handleMediaTypeSelect = (mediaType: 'picture' | 'text' | 'card') => {
+    setSelectedMediaType(mediaType);
+    setShowMediaTypeDialog(false);
+
+    if (mediaType === 'picture') {
+      // For picture upload, show media upload dialog
+      setShowMediaUploadDialog(true);
+    } else {
+      // For text/card scan, navigate to ScanOCR page
+      navigate(`/dashboard/add/scan-ocr`, {
+        state: {
+          scanMode: mediaType,
+          returnTo: `/dashboard/entry/${id}`,
+        },
+      });
+    }
+  };
+
+  const handleMediaUpload = (mediaUrl: string) => {
+    setCapturedMediaImage(mediaUrl);
+    setShowMediaUploadDialog(false);
+    
+    // Navigate to AddAdditionalMedia form with the captured image
+    if (id) {
+      navigate(`/dashboard/add/media/${id}`, {
+        state: {
+          mediaType: selectedMediaType || 'picture',
+          capturedImage: mediaUrl,
+          extractedData: extractedMediaData,
+          entryType: 'picture',
+        },
+      });
+    }
+  };
+
+  // Mock function for getting direct upload URL - you may need to adjust this
+  const getDirectURL = async (file: File, mediaType: string): Promise<string> => {
+    // In a real app, this would upload to cloud storage
+    // For now, we'll create a data URL
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        resolve(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   if (isLoading) {
@@ -227,14 +325,14 @@ export default function EntryDetail() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-40 border-b border-border/40"
+        className="sticky top-0 gradient-primary backdrop-blur supports-[backdrop-filter]:bg-background/60 z-40 border-b border-border/40"
       >
         <div className="px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => navigate('/dashboard')}
-            className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-2 text-base font-semibold text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-5 w-5" />
             Back
           </button>
           <div className="flex items-center gap-2">
@@ -242,17 +340,17 @@ export default function EntryDetail() {
               size="icon"
               variant="ghost"
               onClick={() => navigate(`/dashboard/edit/${entry.id}`)}
-              className="h-9 w-9"
+              className="h-10 w-10"
             >
-              <Edit2 className="h-4 w-4" />
+              <Edit2 className="h-5 w-5" />
             </Button>
             <Button
               size="icon"
               variant="ghost"
               onClick={() => setIsDeleteDialogOpen(true)}
-              className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="h-10 w-10 text-destructive hover:text-destructive hover:bg-destructive/10"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -271,7 +369,10 @@ export default function EntryDetail() {
               <div className="flex items-start justify-between gap-4 mb-6">
                 <div>
                   <h1 className="text-3xl font-bold text-foreground mb-2">
-                    {entry.name}
+                    {recordType === 'content' && contentData?.sPresentation 
+                      ? (contentData.sPresentation.sLabel || contentData.sPresentation.sValue || entry.name)
+                      : entry.name
+                    }
                   </h1>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Building2 className="h-4 w-4" />
@@ -279,13 +380,15 @@ export default function EntryDetail() {
                   </div>
                 </div>
                 <Badge 
-                  variant={entry.type === 'exhibitor' ? 'default' : 'secondary'}
-                  className={entry.type === 'exhibitor' 
-                    ? 'gradient-primary text-primary-foreground border-0' 
-                    : 'bg-secondary text-secondary-foreground'
+                  variant={recordType === 'content' ? 'default' : (entry.type === 'exhibitor' ? 'default' : 'secondary')}
+                  className={recordType === 'content' 
+                    ? 'gradient-primary text-primary-foreground border-0'
+                    : (entry.type === 'exhibitor' 
+                      ? 'gradient-primary text-primary-foreground border-0' 
+                      : 'bg-secondary text-secondary-foreground')
                   }
                 >
-                  {entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee'}
+                  {recordType === 'content' ? 'Content' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee')}
                 </Badge>
               </div>
 
@@ -303,7 +406,7 @@ export default function EntryDetail() {
                 ) : (
                   <div className="w-48 h-48 bg-muted/50 rounded-lg flex items-center justify-center border border-dashed border-muted-foreground/30">
                     <div className="flex flex-col items-center gap-2">
-                      <User className="h-10 w-10 text-muted-foreground/50" />
+                      <User className="h-16 w-16 text-muted-foreground/70 stroke-[1.5]" />
                       <p className="text-sm text-muted-foreground/70">No image available</p>
                     </div>
                   </div>
@@ -359,16 +462,17 @@ export default function EntryDetail() {
         )}
 
         {/* Contact Information */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
-          <Card className="border-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Contact Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+        {recordType !== 'content' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Contact Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
               {entry.email ? (
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group">
                   <div className="flex items-center gap-3">
@@ -431,18 +535,94 @@ export default function EntryDetail() {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+          </motion.div>
+        )}
+
+        {/* Media/Content View - Display when recordType is 'content' */}
+        {recordType === 'content' && contentData && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.25 }}
+          >
+            <Card className="border-border/50 bg-gradient-to-br from-primary/5 to-primary/10">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Globe2 className="h-4 w-4" />
+                  Media View
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {contentData.sPresentation && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      {contentData.sPresentation.sLabel || 'Presentation'}
+                    </p>
+                    {contentData.sPresentation.sValue ? (
+                      <div className="p-3 rounded-lg bg-background border border-border/50">
+                        <p className="text-sm text-foreground whitespace-pre-wrap">{contentData.sPresentation.sValue}</p>
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-lg bg-muted/30 border border-dashed border-muted-foreground/30 text-center">
+                        <p className="text-sm text-muted-foreground/70">No media content available</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {contentData.sNotes && (
+                  <>
+                    <Separator className="my-2" />
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Notes</p>
+                      <p className="text-sm text-foreground whitespace-pre-wrap">{contentData.sNotes}</p>
+                    </div>
+                  </>
+                )}
+
+                {contentData.sContentTags && contentData.sContentTags.length > 0 && (
+                  <>
+                    <Separator className="my-2" />
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tags</p>
+                      <div className="flex flex-wrap gap-2">
+                        {contentData.sContentTags.map((tag: string, idx: number) => (
+                          <Badge key={idx} variant="secondary">{tag}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {contentData.sEventTitles && contentData.sEventTitles.length > 0 && (
+                  <>
+                    <Separator className="my-2" />
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Associated Events</p>
+                      <div className="flex flex-wrap gap-2">
+                        {contentData.sEventTitles.map((eventTitle: string, idx: number) => (
+                          <Badge key={idx} variant="outline">{eventTitle}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Profile URLs */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.25 }}
-        >
-          <Card className="border-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Profiles</CardTitle>
-            </CardHeader>
+        {recordType !== 'content' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.25 }}
+          >
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Profiles</CardTitle>
+              </CardHeader>
             <CardContent className="space-y-3">
               {entry.linkedin ? (
                 <button
@@ -502,7 +682,8 @@ export default function EntryDetail() {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+          </motion.div>
+        )}
 
         {/* AI Profile Analysis */}
         {profileAnalyzeData && (
@@ -875,29 +1056,187 @@ export default function EntryDetail() {
           </motion.div>
         )}
 
+        {/* Additional Media View Section */}
+        {additionalMedia && additionalMedia.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.25 }}
+          >
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ImageIcon className="h-5 w-5" />
+                    Media ({additionalMedia.length})
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowMediaSection(!showMediaSection)}
+                  >
+                    {showMediaSection ? 'Hide' : 'Show'}
+                  </Button>
+                </div>
+              </CardHeader>
+              {showMediaSection && (
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {additionalMedia.map((media, idx) => (
+                      <motion.div
+                        key={media._id || idx}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.2, delay: idx * 0.05 }}
+                      >
+                        <div className="border border-border/50 rounded-lg overflow-hidden hover:border-primary/50 transition-colors">
+                          {/* Media Image */}
+                          {media.sAdditionalMediaUrl && (
+                            <div className="h-32 bg-muted overflow-hidden">
+                              <SafeImage
+                                src={media.sAdditionalMediaUrl}
+                                alt={media.sMediaTitle || 'Media'}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          
+                          {/* Media Content */}
+                          <div className="p-3 space-y-2">
+                            {/* Title with Media Type Badge */}
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="font-semibold text-sm line-clamp-2 flex-1">
+                                {media.sMediaTitle || 'Untitled Media'}
+                              </h4>
+                              {media.eMediaType && (
+                                <Badge variant="outline" className="text-xs capitalize flex-shrink-0">
+                                  {media.eMediaType}
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            {/* Description */}
+                            {media.sMediaDescription && (
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {media.sMediaDescription}
+                              </p>
+                            )}
+                            
+                            {/* Tags */}
+                            {media.sMediaTags && media.sMediaTags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 pt-1">
+                                {media.sMediaTags.slice(0, 3).map((tag: string, i: number) => (
+                                  <Badge key={i} variant="secondary" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                                {media.sMediaTags.length > 3 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    +{media.sMediaTags.length - 3}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Notes */}
+                            {media.sNotes && (
+                              <p className="text-xs text-muted-foreground line-clamp-2 pt-1 border-t border-border/30 mt-2 pt-2">
+                                {media.sNotes}
+                              </p>
+                            )}
+                            
+                            {/* View Full Media Link */}
+                            {media.sAdditionalMediaUrl && (
+                              <div className="pt-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full h-8 text-xs"
+                                  onClick={() => window.open(media.sAdditionalMediaUrl, '_blank')}
+                                >
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  View Full
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          </motion.div>
+        )}
+
         {/* Actions */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
-          className="grid grid-cols-2 gap-3 pt-4"
+          className="space-y-3 pt-4"
         >
-          <Button
-            variant="outline"
-            onClick={() => navigate(`/dashboard/add/event?entryId=${entry.id}`)}
-            className="w-full"
-          >
-            <Calendar className="h-4 w-4 mr-2" />
-            Add Follow-up
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {/* Handle contact action */}}
-            className="w-full"
-          >
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Contact
-          </Button>
+          <div className="grid grid-cols-2 gap-3">
+            {/* Primary Action - Next Steps */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <Button
+                onClick={() => navigate(`/dashboard/add/next-step-1?entryId=${entry.id}`)}
+                className="w-full h-12 gradient-primary text-primary-foreground font-semibold shadow-lg hover:shadow-xl transition-all duration-200 relative group overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                <Calendar className="h-5 w-5 mr-2" />
+                <span>Next Steps</span>
+              </Button>
+            </motion.div>
+
+            {/* Secondary Action - Add Media */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <Button
+                variant="outline"
+                onClick={handleAddMediaClick}
+                className="w-full h-12 font-semibold border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200"
+              >
+                <ImageIcon className="h-5 w-5 mr-2" />
+                <span>Add Media</span>
+              </Button>
+            </motion.div>
+          </div>
+
+          {/* Media Gallery Link */}
+          {additionalMedia.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+            >
+              <Button
+                onClick={() => navigate(`/dashboard/media-view/${entry.id}`)}
+                className="w-full h-11 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 hover:border-amber-300 hover:from-amber-100 hover:to-orange-100 text-foreground font-semibold transition-all duration-200 group"
+              >
+                <div className="flex items-center justify-center gap-2 w-full">
+                  <ImageIcon className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
+                  <span>View Media Gallery</span>
+                  <Badge 
+                    className="ml-auto gradient-primary text-primary-foreground font-bold px-2.5"
+                    variant="default"
+                  >
+                    {additionalMedia.length}
+                  </Badge>
+                </div>
+              </Button>
+            </motion.div>
+          )}
         </motion.div>
       </div>
 
@@ -925,6 +1264,26 @@ export default function EntryDetail() {
           </div>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Media Type Selection Dialog */}
+      <MediaTypeSelectionDialog
+        open={showMediaTypeDialog}
+        onClose={() => setShowMediaTypeDialog(false)}
+        onSelect={handleMediaTypeSelect}
+      />
+
+      {/* Media Upload Dialog */}
+      <MediaUploadDialog
+        open={showMediaUploadDialog}
+        onClose={() => {
+          setShowMediaUploadDialog(false);
+          setSelectedMediaType(null);
+        }}
+        onMediaUpload={handleMediaUpload}
+        title="Upload Media"
+        description="Take a photo or upload an image"
+        getDirectURL={getDirectURL}
+      />
     </div>
   );
 }
