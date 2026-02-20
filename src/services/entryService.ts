@@ -265,7 +265,7 @@ export const entryService = {
   },
 
   async addAdditionalMedia(data: any, mediaType: string): Promise<any> {
-    const response = await fetch(`${hostUrl}/media/additional-media/trade-show/${mediaType}`, {
+    const response = await fetch(`${hostUrl}/media/additional-media/trade-show/image`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

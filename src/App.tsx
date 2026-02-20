@@ -32,6 +32,7 @@ import NextStep1 from "./pages/dashboard/NextSteps/NextStep1";
 import NextStep2 from "./pages/dashboard/NextSteps/NextStep2";
 import NextStep3 from "./pages/dashboard/NextSteps/NextStep3";
 import NextStep4 from "./pages/dashboard/NextSteps/NextStep4";
+import MyNextSteps from "./pages/dashboard/NextSteps/MyNextSteps";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -81,6 +82,7 @@ const AppRoutes = () => (
       <Route path="add/next-step-2" element={<NextStep2 />} />
       <Route path="add/next-step-3" element={<NextStep3 />} />
       <Route path="add/next-step-4" element={<NextStep4 />} />
+      <Route path="my-next-steps" element={<MyNextSteps />} />
     </Route>
     
     {/* Fallback */}

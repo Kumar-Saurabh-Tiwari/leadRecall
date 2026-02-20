@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { nextStepsService } from '@/services/nextStepsService';
+import { useAuth } from '@/contexts/AuthContext';
 
 const NextStep4 = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const entryId = searchParams.get('entryId');
   const entryName = searchParams.get('entryName') || 'Contact';
   const tag = searchParams.get('tag') || 'refer';
@@ -32,17 +34,26 @@ const NextStep4 = () => {
         schedule,
       });
 
-      // Final save with all details
-      await nextStepsService.saveNextStep({
-        recordId: entryId || '',
-        entryName,
-        action: tag,
-        tag: tag,
-        notes: `${tag} - ${option}. ${note}. Scheduled: ${schedule}`,
-        selectedOptions: [option, schedule],
-      });
+      // Final save with all details — call backend API
+      // sNote = one-line machine summary; aAddtionalDetails = user-typed notes
+      const summaryParts = [tag, option].filter(Boolean).join(' — ');
+      const scheduleSummary = schedule ? ` · Scheduled: ${new Date(schedule).toLocaleString()}` : '';
+      const payload = {
+        iContactId: entryId || '',
+        sPersonName: entryName || '',
+        sType: tag,
+        sNote: `${summaryParts}${scheduleSummary}`,
+        aAddtionalDetails: note ? decodeURIComponent(note) : '',
+        sEmail: user?.email || '',
+        sActionTime: schedule || '',
+        isCommercialValue: false,
+        dTimeStamp: new Date().toISOString(),
+        sTagUsers: [],
+      };
 
-      console.log('[NextStep4] Next step confirmed and saved');
+      await nextStepsService.addNextSteps(payload);
+
+      console.log('[NextStep4] Next step confirmed and saved via API');
       setSubmitted(true);
 
       // Show success for 2 seconds then redirect

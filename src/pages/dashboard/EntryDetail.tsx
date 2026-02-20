@@ -24,7 +24,8 @@ import {
   Globe2,
   TrendingUp,
   Target,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ListChecks,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +40,7 @@ import { useEvents } from '@/contexts/EventContext';
 import { SafeImage } from '@/components/SafeImage';
 import { MediaTypeSelectionDialog } from '@/components/dashboard/MediaTypeSelectionDialog';
 import { MediaUploadDialog } from '@/components/dashboard/MediaUploadDialog';
+import { nextStepsService } from '@/services/nextStepsService';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -75,6 +77,9 @@ export default function EntryDetail() {
   const [additionalMedia, setAdditionalMedia] = useState<any[]>([]);
   const [isLoadingMedia, setIsLoadingMedia] = useState(false);
   const [showMediaSection, setShowMediaSection] = useState(false);
+
+  // Next steps count for indicator
+  const [nextStepsCount, setNextStepsCount] = useState(0);
 
   useEffect(() => {
     const fetchEntryDetail = async () => {
@@ -140,6 +145,8 @@ export default function EntryDetail() {
           }
           // Fetch additional media for this entry
           fetchAdditionalMedia(itemData._id || itemData.id);
+          // Fetch existing next steps count for indicator
+          fetchNextStepsCount(itemData._id || itemData.id);
         } else {
           setError('Entry not found');
           navigate('/dashboard');
@@ -154,6 +161,16 @@ export default function EntryDetail() {
 
     fetchEntryDetail();
   }, [id, user?.role, user?.email, navigate]);
+
+  const fetchNextStepsCount = async (contactId: string) => {
+    try {
+      const res = await nextStepsService.getAllNextSteps(contactId);
+      const raw = res?.data ?? res?.records ?? res ?? [];
+      setNextStepsCount(Array.isArray(raw) ? raw.length : 0);
+    } catch {
+      // non-blocking
+    }
+  };
 
   const fetchAdditionalMedia = async (entryId: string) => {
     try {
@@ -1185,12 +1202,17 @@ export default function EntryDetail() {
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               <Button
-                onClick={() => navigate(`/dashboard/add/next-step-1?entryId=${entry.id}`)}
+                onClick={() => navigate(`/dashboard/add/next-step-1?entryId=${entry.id}&entryName=${encodeURIComponent(entry.name)}`)}
                 className="w-full h-12 gradient-primary text-primary-foreground font-semibold shadow-lg hover:shadow-xl transition-all duration-200 relative group overflow-hidden"
               >
                 <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-                <Calendar className="h-5 w-5 mr-2" />
+                <ListChecks className="h-5 w-5 mr-2" />
                 <span>Next Steps</span>
+                {nextStepsCount > 0 && (
+                  <Badge className="ml-2 gradient-primary border border-primary-foreground/40 text-primary-foreground font-bold px-1.5 min-w-[1.25rem] h-5 flex items-center justify-center text-[10px]">
+                    {nextStepsCount}
+                  </Badge>
+                )}
               </Button>
             </motion.div>
 
@@ -1210,6 +1232,33 @@ export default function EntryDetail() {
               </Button>
             </motion.div>
           </div>
+
+          {/* Next Steps view link */}
+          {nextStepsCount > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.05 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+            >
+              <Button
+                onClick={() => navigate(`/dashboard/my-next-steps?contactId=${entry.id}`)}
+                className="w-full h-11 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 hover:border-indigo-300 hover:from-indigo-100 hover:to-purple-100 text-foreground font-semibold transition-all duration-200 group"
+              >
+                <div className="flex items-center justify-center gap-2 w-full">
+                  <ListChecks className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
+                  <span>View Next Steps</span>
+                  <Badge
+                    className="ml-auto gradient-primary text-primary-foreground font-bold px-2.5"
+                    variant="default"
+                  >
+                    {nextStepsCount}
+                  </Badge>
+                </div>
+              </Button>
+            </motion.div>
+          )}
 
           {/* Media Gallery Link */}
           {additionalMedia.length > 0 && (

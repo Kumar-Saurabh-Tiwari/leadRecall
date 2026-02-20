@@ -7,13 +7,28 @@ export interface NextStepAction {
 }
 
 export interface NextStepData {
-  recordId: string;
-  entryName: string;
-  action: string;
-  tag?: string;
-  notes?: string;
+  /** MongoDB _id of the contact */
+  iContactId: string;
+  /** Contact's full name */
+  sPersonName?: string;
+  /** Contact's email */
+  sEmail?: string;
+  /** Main note text */
+  sNote?: string;
+  /** Additional details / sub-option chosen */
+  aAddtionalDetails?: string;
+  /** Action type: refer | connect | call | mention | buy | contemplate | others */
+  sType?: string;
+  /** Users tagged in the note */
+  sTagUsers?: Array<{ _id?: string; name: string }>;
+  /** ISO string or Date for scheduled follow-up */
+  sActionTime?: string | Date;
+  /** Whether this note has commercial value */
+  isCommercialValue?: boolean;
+  /** Client-side timestamp */
+  dTimeStamp?: Date;
+  // legacy local fields kept for offline fallback
   selectedOptions?: string[];
-  timestamp?: Date;
 }
 
 class NextStepsService {
@@ -82,7 +97,7 @@ class NextStepsService {
       
       const data = localStorage.getItem('nextStepsData');
       const dataArray = data ? JSON.parse(data) : [];
-      return dataArray.filter((item: NextStepData) => item.recordId === recordId);
+      return dataArray.filter((item: NextStepData) => item.iContactId === recordId);
     } catch (error) {
       console.error('[NextStepsService] Error fetching next step history:', error);
       return [];
@@ -99,7 +114,7 @@ class NextStepsService {
       
       const data = localStorage.getItem('nextStepsData');
       const dataArray = data ? JSON.parse(data) : [];
-      const index = dataArray.findIndex((item: NextStepData) => item.recordId === recordId);
+      const index = dataArray.findIndex((item: NextStepData) => item.iContactId === recordId);
       if (index !== -1) {
         dataArray[index] = { ...dataArray[index], ...stepData };
         localStorage.setItem('nextStepsData', JSON.stringify(dataArray));
@@ -122,7 +137,7 @@ class NextStepsService {
       
       const data = localStorage.getItem('nextStepsData');
       const dataArray = data ? JSON.parse(data) : [];
-      const filtered = dataArray.filter((item: NextStepData) => item.recordId !== recordId);
+      const filtered = dataArray.filter((item: NextStepData) => item.iContactId !== recordId);
       localStorage.setItem('nextStepsData', JSON.stringify(filtered));
       
       console.log('[NextStepsService] Next step deleted successfully');
@@ -209,6 +224,85 @@ class NextStepsService {
         ...this.getAuthHeaders()
       },
       body: JSON.stringify(data)
+    });
+    return response.json();
+  }
+
+  /**
+   * Create a new note/next step for a contact
+   * @param data - Note data
+   * @returns Created note with ID
+   */
+  async addNextSteps(data: any): Promise<any> {
+    const response = await fetch(`${this.hostUrl}/profile/add-note`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.getAuthHeaders()
+      },
+      body: JSON.stringify(data)
+    });
+    return response.json();
+  }
+
+  /**
+   * Update an existing note/next step
+   * @param data - Updated note data
+   * @param id - Note ID to update
+   * @returns Update confirmation
+   */
+  async updateNextSteps(data: any, id: string | number): Promise<any> {
+    const response = await fetch(`${this.hostUrl}/profile/update-note/${encodeURIComponent(String(id))}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.getAuthHeaders()
+      },
+      body: JSON.stringify(data)
+    });
+    return response.json();
+  }
+
+  /**
+   * Retrieve a specific note/next step record
+   * @param id - Note ID to retrieve
+   * @returns Note details with response metadata
+   */
+  async getNextStepRecords(id: string | number): Promise<any> {
+    const response = await fetch(`${this.hostUrl}/profile/get-note/${encodeURIComponent(String(id))}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders()
+      }
+    });
+    return response.json();
+  }
+
+  /**
+   * Get all notes associated with a specific contact
+   * @param iContactId - Contact ID to filter notes
+   * @returns Array of contact notes with response metadata
+   */
+  async getAllNextSteps(iContactId: string | number): Promise<any> {
+    const response = await fetch(`${this.hostUrl}/profile/get-notes-by-contact/?iContactId=${encodeURIComponent(String(iContactId))}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders()
+      }
+    });
+    return response.json();
+  }
+
+  /**
+   * Get all notes created by the authenticated user
+   * @returns Array of user's notes with response metadata
+   */
+  async getAllNextStepsOfUser(): Promise<any> {
+    const response = await fetch(`${this.hostUrl}/profile/get-notes-by-userId`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders()
+      }
     });
     return response.json();
   }

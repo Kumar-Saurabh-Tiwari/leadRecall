@@ -119,7 +119,7 @@ export default function AddAdditionalMedia() {
 
       // Format media object according to the required structure
       const media = {
-        _id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        _id: Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
         iRecordId: id,
         sAdditionalMediaUrl: mediaUrl,
         eMediaType: state.mediaType,
@@ -211,11 +211,11 @@ export default function AddAdditionalMedia() {
                 <CardTitle className="text-base">Media Preview</CardTitle>
               </CardHeader>
               <CardContent className="flex justify-center">
-                <div className="w-full max-w-md rounded-lg overflow-hidden border border-border/50">
+                <div className="w-full max-w-md aspect-square rounded-lg overflow-hidden border border-border/50">
                   <SafeImage
                     src={state.capturedImage}
                     alt="Media preview"
-                    className="w-full h-auto object-cover"
+                    className="w-full h-full object-cover"
                   />
                 </div>
               </CardContent>
