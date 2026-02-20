@@ -74,7 +74,8 @@ export default function Home() {
       if (dataArray && Array.isArray(dataArray)) {
         const transformedEntries: Entry[] = dataArray.map((item: any) => {
           const isContent = item.eRecordType === "content";
-          const contactData = isContent ? item.oContentData : item.oContactData;
+          const isLocation = item.eRecordType === "location";
+          const contactData = isLocation ? item.oLocationData : (isContent ? item.oContentData : item.oContactData);
           
           // Get first non-empty event title
           const validEvent = contactData?.sEventTitles?.find((evt: any) => evt.sTitle && evt.sTitle.trim());
@@ -82,9 +83,11 @@ export default function Home() {
           // Get first non-N/A LinkedIn profile link
           const linkedinProfile = contactData?.profiles?.find((prof: any) => prof.sProfileLink && prof.sProfileLink !== 'N/A');
           
-          // For content type, use sPresentation as title; for contact type, use name
+          // For location type, use sPlace details; for content type, use sPresentation; for contact type, use name
           let name = 'Unknown';
-          if (isContent) {
+          if (isLocation) {
+            name = contactData?.sPlace?.sValue || contactData?.sPlace?.sLabel || contactData?.sPlace?.sAddress || 'Unknown Location';
+          } else if (isContent) {
             name = contactData?.sPresentation?.sValue || contactData?.sPresentation?.sLabel || 'Unknown Content';
           } else {
             name = contactData ? 
@@ -97,15 +100,16 @@ export default function Home() {
             name: name,
             company: contactData?.sCompany || '',
             event: validEvent?.sTitle || 'Unknown Event',
-            notes: isContent ? (contactData?.sNotes || '') : (contactData?.sEntryNotes?.[0] || ''),
-            type: isContent ? 'content' : (user.role === 'exhibitor' ? 'attendee' : 'exhibitor'),
+            notes: isLocation ? (contactData?.sNotes || '') : (isContent ? (contactData?.sNotes || '') : (contactData?.sEntryNotes?.[0] || '')),
+            type: isLocation ? 'location' : (isContent ? 'content' : (user.role === 'exhibitor' ? 'attendee' : 'exhibitor')),
             createdAt: item.dCreatedDate ? new Date(item.dCreatedDate) : new Date(),
             email: contactData?.sEmail?.[0]?.Email || undefined,
             phone: contactData?.contacts?.[0]?.sContactNumber || undefined,
             linkedin: linkedinProfile?.sProfileLink || undefined,
             profileUrl: undefined,
             image: item?.sMediaUrl,
-            role: contactData?.sRole
+            role: contactData?.sRole,
+            isNextStep: item.isNextStep || false
           };
         });
 

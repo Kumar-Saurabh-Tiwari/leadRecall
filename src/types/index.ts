@@ -50,7 +50,7 @@ export interface Entry {
   company: string;
   event: string;
   notes: string;
-  type: 'exhibitor' | 'attendee' | 'content';
+  type: 'exhibitor' | 'attendee' | 'content' | 'location';
   createdAt: Date;
   linkedin?: string;
   profileUrl?: string;
@@ -58,6 +58,7 @@ export interface Entry {
   phone?: string;
   image?: string;
   role?: string;
+  isNextStep?: boolean;
 }
 
 export interface Event {

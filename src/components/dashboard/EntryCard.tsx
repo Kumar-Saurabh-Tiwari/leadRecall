@@ -50,12 +50,14 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
                 className={`shadow-md border border-white/20 font-semibold text-xs px-3 py-1 ${
                   entry.type === 'content'
                     ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white'
+                    : entry.type === 'location'
+                    ? 'bg-gradient-to-r from-orange-600 to-orange-700 text-white'
                     : entry.type === 'exhibitor' 
                     ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white' 
                     : 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white'
                 }`}
               >
-                {entry.type === 'content' ? 'Content' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee')}
+                {entry.type === 'content' ? 'Content' : (entry.type === 'location' ? 'Location' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee'))}
               </Badge>
             </div>
           </div>
@@ -93,6 +95,11 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
 
               <div className="flex items-center justify-between gap-3">
                 <div className="flex gap-2">
+                  {entry.isNextStep && (
+                    <div className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 flex items-center justify-center border border-green-200/50 dark:border-green-400/30 hover:bg-green-200 dark:hover:bg-green-500/30 transition-colors shadow-sm cursor-pointer group/icon" title="Next Step">
+                      <img src="/next-step.svg" alt="Next Step" className="h-full w-full" />
+                    </div>
+                  )}
                   {entry.linkedin && entry.linkedin !== 'N/A' && (
                     <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-200/50 dark:border-blue-400/30 hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-colors shadow-sm cursor-pointer group/icon">
                       <Linkedin className="h-4 w-4" />
@@ -152,7 +159,7 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
               variant="secondary" 
               className="absolute top-2 right-2 text-[10px] px-1.5 py-0 h-5 bg-background/80 backdrop-blur-sm border-none font-medium text-foreground"
             >
-              {entry.type === 'content' ? 'Content' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee')}
+              {entry.type === 'content' ? 'Content' : (entry.type === 'location' ? 'Location' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee'))}
             </Badge>
           </div>
           
@@ -170,6 +177,11 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
             
             <div className="mt-auto pt-1 flex items-center justify-between gap-1.5">
               <div className="flex gap-1">
+                {entry.isNextStep && (
+                  <div className="w-7 h-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-slate-50 transition-colors">
+                    <img src="/next-step.svg" alt="Next Step" className="h-full w-full" />
+                  </div>
+                )}
                 {entry.linkedin && entry.linkedin !== 'N/A' && (
                   <div className="w-7 h-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:bg-slate-50 transition-colors">
                     <Linkedin className="h-3.5 w-3.5" />
@@ -224,10 +236,10 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
               <div className="absolute bottom-1.5 left-1.5 right-1.5">
                  <div className="flex items-center gap-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-2 py-1 rounded-full border border-slate-200/50 dark:border-slate-800/50 shadow-sm">
                     <div className="bg-primary/10 p-0.5 rounded-full">
-                       {entry.type === 'content' ? <User className="h-3 w-3 text-primary" /> : (entry.type === 'exhibitor' ? <Building2 className="h-3 w-3 text-primary" /> : <User className="h-3 w-3 text-primary" />)}
+                       {entry.type === 'content' ? <User className="h-3 w-3 text-primary" /> : (entry.type === 'location' ? <MapPin className="h-3 w-3 text-primary" /> : (entry.type === 'exhibitor' ? <Building2 className="h-3 w-3 text-primary" /> : <User className="h-3 w-3 text-primary" />))}
                     </div>
                     <span className="text-[10px] font-extrabold text-slate-700 dark:text-slate-200 uppercase tracking-tight">
-                      {entry.type === 'content' ? 'Content' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Contact')}
+                      {entry.type === 'content' ? 'Content' : (entry.type === 'location' ? 'Location' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Contact'))}
                     </span>
                     {/* <div className="ml-auto bg-green-600 text-[9px] text-white w-4 h-4 rounded-full flex items-center justify-center font-black">
                       {entry.notes ? '1' : '3'}
@@ -251,10 +263,19 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {/* Event/Type Icon */}
-                  <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-500 flex items-center justify-center border border-amber-200/50 dark:border-amber-800/40 shadow-sm">
-                    <MapPin className="h-4 w-4" />
-                  </div>
+                  {/* Next Step Icon */}
+                  {entry.isNextStep && (
+                    <div className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-500 flex items-center justify-center border border-green-200/50 dark:border-green-800/40 shadow-sm" title="Next Step">
+                      <img src="/next-step.svg" alt="Next Step" className="h-full w-full" />
+                    </div>
+                  )}
+                  
+                  {/* Location Icon - Only for location records */}
+                  {entry.type === 'location' && (
+                    <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-500 flex items-center justify-center border border-amber-200/50 dark:border-amber-800/40 shadow-sm">
+                      <MapPin className="h-4 w-4" />
+                    </div>
+                  )}
                   
                   {/* LinkedIn */}
                   {entry.linkedin && entry.linkedin !== 'N/A' && (
@@ -336,12 +357,22 @@ export const EntryCard = forwardRef<HTMLDivElement, EntryCardProps>(
             
             {/* Badge */}
             <Badge variant="outline" className="text-xs mb-2">
-              {entry.type === 'content' ? 'Content' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee')}
+              {entry.type === 'content' ? 'Content' : (entry.type === 'location' ? 'Location' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee'))}
             </Badge>
           </div>
           
           {/* Contact Icons */}
           <div className="flex gap-1 items-center pt-2 border-t border-border/30">
+            {entry.isNextStep && (
+              <a 
+                href="#"
+                onClick={(e) => e.stopPropagation()}
+                className="flex-1 flex items-center justify-center w-7 h-7 rounded bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors text-xs font-medium"
+                title="Next Step"
+              >
+                <img src="/next-step.svg" alt="Next Step" className="h-3 w-3" />
+              </a>
+            )}
             {entry.email && (
               <a 
                 href={`mailto:${entry.email}`}

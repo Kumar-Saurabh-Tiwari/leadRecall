@@ -407,6 +407,10 @@ export default function ScanOCR() {
               ocrText: extractedData?.text || extractedData?.name || '',
               mediaUrl,
               selectedEvent,
+              // AddAdditionalMedia-compatible fields
+              mediaType: 'text' as const,
+              capturedImage: previewImage || mediaUrl,
+              extractedData,
             },
           });
         } else {
@@ -417,6 +421,10 @@ export default function ScanOCR() {
               selectedEvent,
               scannedViaOCR: true,
               mediaUrl,
+              // AddAdditionalMedia-compatible fields
+              mediaType: 'card' as const,
+              capturedImage: previewImage || mediaUrl,
+              extractedData,
             },
           });
         }
@@ -455,7 +463,7 @@ export default function ScanOCR() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate(-1)}
           className="shrink-0"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -754,7 +762,7 @@ export default function ScanOCR() {
 
           <Button
             variant="ghost"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate(-1)}
             className="w-full"
             size="lg"
           >

@@ -81,6 +81,13 @@ const addOptions: AddOption[] = [
     icon: FileText,
     path: '/dashboard/add/content',
   },
+  {
+    id: 'add-location',
+    label: 'Add Location',
+    description: 'Add a location entry',
+    icon: MapPin,
+    path: '/dashboard/add/location',
+  },
   // {
   //   id: 'scan-ocr',
   //   label: 'Scan OCR For Contact',

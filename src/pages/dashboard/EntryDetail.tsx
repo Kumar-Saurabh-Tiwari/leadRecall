@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  ArrowLeft, 
-  Building2, 
-  Calendar, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Edit2, 
+import {
+  ArrowLeft,
+  Building2,
+  Calendar,
+  Mail,
+  Phone,
+  MapPin,
+  Edit2,
   Trash2,
   MessageSquare,
   Linkedin,
@@ -41,6 +41,7 @@ import { SafeImage } from '@/components/SafeImage';
 import { MediaTypeSelectionDialog } from '@/components/dashboard/MediaTypeSelectionDialog';
 import { MediaUploadDialog } from '@/components/dashboard/MediaUploadDialog';
 import { nextStepsService } from '@/services/nextStepsService';
+import { environment } from '@/config/environment';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,19 +61,20 @@ export default function EntryDetail() {
   const [entry, setEntry] = useState<Entry | null>(null);
   const [profileAnalyzeData, setProfileAnalyzeData] = useState<any>(null);
   const [contentData, setContentData] = useState<any>(null);
+  const [locationData, setLocationData] = useState<any>(null);
   const [recordType, setRecordType] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
-  
+
   // Media addition state
   const [showMediaTypeDialog, setShowMediaTypeDialog] = useState(false);
   const [showMediaUploadDialog, setShowMediaUploadDialog] = useState(false);
   const [selectedMediaType, setSelectedMediaType] = useState<'picture' | 'text' | 'card' | null>(null);
   const [capturedMediaImage, setCapturedMediaImage] = useState<string | null>(null);
   const [extractedMediaData, setExtractedMediaData] = useState<any>(null);
-  
+
   // View additional media state
   const [additionalMedia, setAdditionalMedia] = useState<any[]>([]);
   const [isLoadingMedia, setIsLoadingMedia] = useState(false);
@@ -93,11 +95,11 @@ export default function EntryDetail() {
         setError(null);
 
         let apiResponse: any;
-        
+
         // Fetch based on user role
         if (user.role === 'exhibitor') {
           // Exhibitors see attendee details
-          apiResponse = await entryService.getExhibitorDataByID (id);
+          apiResponse = await entryService.getExhibitorDataByID(id);
         } else {
           // Attendees see exhibitor details
           apiResponse = await entryService.getAttendeeDataByID(id);
@@ -108,28 +110,53 @@ export default function EntryDetail() {
         // Check if response has data
         const itemData = apiResponse?.data || apiResponse;
         if (itemData && itemData._id) {
-          // Extract record type and content data if present
+          // Extract record type and content/location data if present
           if (itemData.eRecordType) {
             setRecordType(itemData.eRecordType);
           }
           if (itemData.oContentData) {
             setContentData(itemData.oContentData);
           }
+          if (itemData.oLocationData) {
+            setLocationData(itemData.oLocationData);
+          }
+
+          // For location and content records, extract from appropriate data object
+          let dataSource = itemData.oContactData;
+          if (itemData.eRecordType === 'location' && itemData.oLocationData) {
+            dataSource = itemData.oLocationData;
+          } else if (itemData.eRecordType === 'content' && itemData.oContentData) {
+            dataSource = itemData.oContentData;
+          }
+
           // Get first non-empty event title
-          const validEvent = itemData.oContactData?.sEventTitles?.find((evt: any) => evt.sTitle && evt.sTitle.trim());
-          
+          const validEvent = dataSource?.sEventTitles?.find((evt: any) => evt.sTitle && evt.sTitle.trim()) ||
+            (Array.isArray(dataSource?.sEventTitles) && dataSource?.sEventTitles[0]);
+
           // Get first non-N/A LinkedIn profile link
           const linkedinProfile = itemData.oContactData?.profiles?.find((prof: any) => prof.sProfileLink && prof.sProfileLink !== 'N/A');
 
+          // Build entry name based on record type
+          let entryName = 'Unknown';
+          if (itemData.eRecordType === 'location' && itemData.oLocationData?.sPlace) {
+            entryName = itemData.oLocationData.sPlace.sValue || itemData.oLocationData.sPlace.sLabel || itemData.oLocationData.sPlace.sAddress || 'Unknown Location';
+          } else if (itemData.eRecordType === 'content' && itemData.oContentData?.sPresentation) {
+            entryName = itemData.oContentData.sPresentation.sValue || itemData.oContentData.sPresentation.sLabel || 'Unknown Content';
+          } else if (itemData.oContactData) {
+            entryName = `${itemData.oContactData.sFirstName || ''} ${itemData.oContactData.sLastName || ''}`.trim() || 'Unknown';
+          }
+
           const transformedEntry: Entry = {
             id: itemData._id || itemData.id,
-            name: itemData.oContactData ? 
-              `${itemData.oContactData.sFirstName || ''} ${itemData.oContactData.sLastName || ''}`.trim() : 
-              'Unknown',
-            company: itemData.oContactData?.sCompany || '',
-            event: validEvent?.sTitle || 'Unknown Event',
-            notes: itemData.oContactData?.sEntryNotes?.[0] || '',
-            type: user.role === 'exhibitor' ? 'attendee' : 'exhibitor',
+            name: entryName,
+            company: dataSource?.sCompany || '',
+            event: validEvent?.sTitle || (typeof validEvent === 'string' ? validEvent : 'Unknown Event'),
+            notes: itemData.eRecordType === 'location' ? (itemData.oLocationData?.sNotes || '') :
+              (itemData.eRecordType === 'content' ? (itemData.oContentData?.sNotes || '') :
+                (itemData.oContactData?.sEntryNotes?.[0] || '')),
+            type: itemData.eRecordType === 'location' ? 'location' :
+              (itemData.eRecordType === 'content' ? 'content' :
+                (user.role === 'exhibitor' ? 'attendee' : 'exhibitor')),
             createdAt: itemData.dCreatedDate ? new Date(itemData.dCreatedDate) : new Date(),
             email: itemData.oContactData?.sEmail?.[0]?.Email || undefined,
             phone: itemData.oContactData?.contacts?.[0]?.sContactNumber || undefined,
@@ -180,7 +207,7 @@ export default function EntryDetail() {
         userType: user?.role === 'exhibitor' ? 'exhibitor' : 'attendee',
       };
       const response = await entryService.getAdditionalMedia(filterData);
-      
+
       // Handle the API response structure: { data: { records: [...] } }
       const mediaArray = response?.data?.records || response?.records || [];
       setAdditionalMedia(Array.isArray(mediaArray) ? mediaArray : []);
@@ -205,11 +232,11 @@ export default function EntryDetail() {
         response = await entryService.deleteAttendee(entry.id, user.email);
       }
 
-      
+
       // Update cached entries by removing the deleted entry
       const updatedEntries = cachedEntries.filter(e => e.id !== entry.id);
       setEntriesInContext(updatedEntries);
-      
+
       console.log('Delete response:', response);
       toast({
         title: 'Success',
@@ -256,7 +283,7 @@ export default function EntryDetail() {
       navigate(`/dashboard/add/scan-ocr`, {
         state: {
           scanMode: mediaType,
-          returnTo: `/dashboard/entry/${id}`,
+          returnTo: `/dashboard/add/media/${id}`,
         },
       });
     }
@@ -265,7 +292,7 @@ export default function EntryDetail() {
   const handleMediaUpload = (mediaUrl: string) => {
     setCapturedMediaImage(mediaUrl);
     setShowMediaUploadDialog(false);
-    
+
     // Navigate to AddAdditionalMedia form with the captured image
     if (id) {
       navigate(`/dashboard/add/media/${id}`, {
@@ -375,7 +402,6 @@ export default function EntryDetail() {
 
       {/* Content */}
       <div className="px-4 py-6 space-y-6">
-        {/* Profile Section */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -386,26 +412,50 @@ export default function EntryDetail() {
               <div className="flex items-start justify-between gap-4 mb-6">
                 <div>
                   <h1 className="text-3xl font-bold text-foreground mb-2">
-                    {recordType === 'content' && contentData?.sPresentation 
-                      ? (contentData.sPresentation.sLabel || contentData.sPresentation.sValue || entry.name)
-                      : entry.name
+                    {recordType === 'location' && locationData?.sPlace
+                      ? (locationData.sPlace.sValue || locationData.sPlace.sLabel || '' || '')
+                      : (recordType === 'content' && contentData?.sPresentation
+                        ? (contentData.sPresentation.sLabel || contentData.sPresentation.sValue || entry.name)
+                        : entry.name)
                     }
                   </h1>
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Building2 className="h-4 w-4" />
-                    <span className="font-medium">{entry.company}</span>
+                    {recordType === 'location' ? (
+                      <>
+                        <MapPin className="h-4 w-4" />
+                        <span
+                          className="font-small"
+                          style={{
+                            display: 'inline-block',
+                            maxWidth: '200px',  // adjust width as needed
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            verticalAlign: 'middle'
+                          }}
+                        >
+                          {locationData?.sPlace?.sAddress || 'Location'}
+                        </span>                      </>
+                    ) : (
+                      <>
+                        <Building2 className="h-4 w-4" />
+                        <span className="font-medium">{entry.company || 'N/A'}</span>
+                      </>
+                    )}
                   </div>
                 </div>
-                <Badge 
-                  variant={recordType === 'content' ? 'default' : (entry.type === 'exhibitor' ? 'default' : 'secondary')}
-                  className={recordType === 'content' 
-                    ? 'gradient-primary text-primary-foreground border-0'
-                    : (entry.type === 'exhibitor' 
-                      ? 'gradient-primary text-primary-foreground border-0' 
-                      : 'bg-secondary text-secondary-foreground')
+                <Badge
+                  variant={recordType === 'location' ? 'default' : (recordType === 'content' ? 'default' : (entry.type === 'exhibitor' ? 'default' : 'secondary'))}
+                  className={recordType === 'location'
+                    ? 'bg-gradient-to-r from-orange-600 to-orange-700 text-white border-0'
+                    : (recordType === 'content'
+                      ? 'gradient-primary text-primary-foreground border-0'
+                      : (entry.type === 'exhibitor'
+                        ? 'gradient-primary text-primary-foreground border-0'
+                        : 'bg-secondary text-secondary-foreground'))
                   }
                 >
-                  {recordType === 'content' ? 'Content' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee')}
+                  {recordType === 'location' ? 'Location' : (recordType === 'content' ? 'Content' : (entry.type === 'exhibitor' ? 'Exhibitor' : 'Attendee'))}
                 </Badge>
               </div>
 
@@ -423,7 +473,11 @@ export default function EntryDetail() {
                 ) : (
                   <div className="w-48 h-48 bg-muted/50 rounded-lg flex items-center justify-center border border-dashed border-muted-foreground/30">
                     <div className="flex flex-col items-center gap-2">
-                      <User className="h-16 w-16 text-muted-foreground/70 stroke-[1.5]" />
+                      {recordType === 'location' ? (
+                        <MapPin className="h-16 w-16 text-muted-foreground/70 stroke-[1.5]" />
+                      ) : (
+                        <User className="h-16 w-16 text-muted-foreground/70 stroke-[1.5]" />
+                      )}
                       <p className="text-sm text-muted-foreground/70">No image available</p>
                     </div>
                   </div>
@@ -432,25 +486,118 @@ export default function EntryDetail() {
 
               <Separator className="my-4" />
 
-              {/* Info Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Event
-                  </p>
-                  <p className="text-sm font-semibold text-foreground">
-                    {entry.event}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Date Added
-                  </p>
-                  <p className="text-sm font-semibold text-foreground">
-                    {format(entry.createdAt, 'MMM d, yyyy')}
-                  </p>
-                </div>
-              </div>
+              {/* Location Details Section */}
+              {recordType === 'location' && locationData?.sPlace && (
+                <>
+                  <div className="space-y-4 mb-6">
+                    {locationData.sPlace.sLabel && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Label
+                        </p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {locationData.sPlace.sLabel}
+                        </p>
+                      </div>
+                    )}
+
+                    {locationData.sPlace.sAddress && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Address
+                        </p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {locationData.sPlace.sAddress}
+                        </p>
+                      </div>
+                    )}
+
+                    {locationData.sPlace.sCoordinates && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Coordinates
+                        </p>
+                        <div className="flex gap-4">
+                          <span className="text-sm text-foreground">
+                            <span className="font-medium">Lat:</span> {locationData.sPlace.sCoordinates.lat}
+                          </span>
+                          <span className="text-sm text-foreground">
+                            <span className="font-medium">Lng:</span> {locationData.sPlace.sCoordinates.lng}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Event
+                        </p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {entry.event}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Date Added
+                        </p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {format(entry.createdAt, 'MMM d, yyyy')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Map Section */}
+                  {locationData.sPlace.sCoordinates?.lat && locationData.sPlace.sCoordinates?.lng && (
+                    <div className="mt-6 pt-6 border-t border-border/50">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+                        Location Map
+                      </p>
+                      <div className="w-full aspect-square rounded-lg overflow-hidden border border-border/50">
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          style={{ border: 0 }}
+                          loading="lazy"
+                          src={`https://www.google.com/maps/embed/v1/place?key=${environment.gMapKey}&q=${locationData.sPlace.sCoordinates.lat},${locationData.sPlace.sCoordinates.lng}`}
+                          allowFullScreen={true}
+                          referrerPolicy="no-referrer-when-downgrade"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Coordinates: {locationData.sPlace.sCoordinates.lat}, {locationData.sPlace.sCoordinates.lng}
+                      </p>
+                    </div>
+                  )}
+
+                  <Separator className="my-4" />
+                </>
+              )}
+
+              {/* Info Grid for non-location records */}
+              {recordType !== 'location' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Event
+                      </p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {entry.event}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Date Added
+                      </p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {format(entry.createdAt, 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -478,8 +625,8 @@ export default function EntryDetail() {
           </motion.div>
         )}
 
-        {/* Contact Information */}
-        {recordType !== 'content' && (
+        {/* Contact Information - Only for non-location records */}
+        {recordType !== 'content' && recordType !== 'location' && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -490,72 +637,72 @@ export default function EntryDetail() {
                 <CardTitle className="text-base">Contact Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-              {entry.email ? (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Email</p>
-                      <p className="text-sm font-medium text-foreground truncate">{entry.email}</p>
+                {entry.email ? (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Email</p>
+                        <p className="text-sm font-medium text-foreground truncate">{entry.email}</p>
+                      </div>
                     </div>
+                    <button
+                      onClick={() => copyToClipboard(entry.email!, 'Email')}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => copyToClipboard(entry.email!, 'Email')}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-dashed border-muted-foreground/30">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-4 w-4 text-muted-foreground/50" />
-                    <p className="text-sm text-muted-foreground/70">Email not added</p>
-                  </div>
-                  <button
-                    onClick={() => navigate(`/dashboard/edit/${entry.id}`)}
-                    className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                  >
-                    Add
-                  </button>
-                </div>
-              )}
-              {entry.phone ? (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group">
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Phone</p>
-                      <p className="text-sm font-medium text-foreground">{entry.phone}</p>
+                ) : (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-dashed border-muted-foreground/30">
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-4 w-4 text-muted-foreground/50" />
+                      <p className="text-sm text-muted-foreground/70">Email not added</p>
                     </div>
+                    <button
+                      onClick={() => navigate(`/dashboard/edit/${entry.id}`)}
+                      className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Add
+                    </button>
                   </div>
-                  <button
-                    onClick={() => copyToClipboard(entry.phone!, 'Phone')}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-dashed border-muted-foreground/30">
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-4 w-4 text-muted-foreground/50" />
-                    <p className="text-sm text-muted-foreground/70">Phone not added</p>
+                )}
+                {entry.phone ? (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Phone</p>
+                        <p className="text-sm font-medium text-foreground">{entry.phone}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(entry.phone!, 'Phone')}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => navigate(`/dashboard/edit/${entry.id}`)}
-                    className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                  >
-                    Add
-                  </button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                ) : (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-dashed border-muted-foreground/30">
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-4 w-4 text-muted-foreground/50" />
+                      <p className="text-sm text-muted-foreground/70">Phone not added</p>
+                    </div>
+                    <button
+                      onClick={() => navigate(`/dashboard/edit/${entry.id}`)}
+                      className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </motion.div>
         )}
 
-        {/* Media/Content View - Display when recordType is 'content' */}
+        {/* Media/Content View - Only for content records */}
         {recordType === 'content' && contentData && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -629,8 +776,8 @@ export default function EntryDetail() {
           </motion.div>
         )}
 
-        {/* Profile URLs */}
-        {recordType !== 'content' && (
+        {/* Profile URLs - Only for non-location records */}
+        {recordType !== 'content' && recordType !== 'location' && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -640,70 +787,70 @@ export default function EntryDetail() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Profiles</CardTitle>
               </CardHeader>
-            <CardContent className="space-y-3">
-              {entry.linkedin ? (
-                <button
-                  onClick={() => openUrl(entry.linkedin!)}
-                  className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0 text-left">
-                    <Linkedin className="h-4 w-4 text-[#0A66C2]" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">LinkedIn</p>
-                      <p className="text-sm font-medium text-foreground truncate">{entry.linkedin}</p>
-                    </div>
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0 ml-2" />
-                </button>
-              ) : (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-dashed border-muted-foreground/30">
-                  <div className="flex items-center gap-3">
-                    <Linkedin className="h-4 w-4 text-[#0A66C2]/50" />
-                    <p className="text-sm text-muted-foreground/70">LinkedIn not added</p>
-                  </div>
+              <CardContent className="space-y-3">
+                {entry.linkedin ? (
                   <button
-                    onClick={() => navigate(`/dashboard/edit/${entry.id}`)}
-                    className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                    onClick={() => openUrl(entry.linkedin!)}
+                    className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group"
                   >
-                    Add
-                  </button>
-                </div>
-              )}
-              {entry.profileUrl ? (
-                <button
-                  onClick={() => openUrl(entry.profileUrl!)}
-                  className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0 text-left">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Website</p>
-                      <p className="text-sm font-medium text-foreground truncate">{entry.profileUrl}</p>
+                    <div className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                      <Linkedin className="h-4 w-4 text-[#0A66C2]" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">LinkedIn</p>
+                        <p className="text-sm font-medium text-foreground truncate">{entry.linkedin}</p>
+                      </div>
                     </div>
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0 ml-2" />
-                </button>
-              ) : (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-dashed border-muted-foreground/30">
-                  <div className="flex items-center gap-3">
-                    <Globe className="h-4 w-4 text-muted-foreground/50" />
-                    <p className="text-sm text-muted-foreground/70">Website not added</p>
-                  </div>
-                  <button
-                    onClick={() => navigate(`/dashboard/edit/${entry.id}`)}
-                    className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                  >
-                    Add
+                    <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0 ml-2" />
                   </button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                ) : (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-dashed border-muted-foreground/30">
+                    <div className="flex items-center gap-3">
+                      <Linkedin className="h-4 w-4 text-[#0A66C2]/50" />
+                      <p className="text-sm text-muted-foreground/70">LinkedIn not added</p>
+                    </div>
+                    <button
+                      onClick={() => navigate(`/dashboard/edit/${entry.id}`)}
+                      className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
+                {entry.profileUrl ? (
+                  <button
+                    onClick={() => openUrl(entry.profileUrl!)}
+                    className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Website</p>
+                        <p className="text-sm font-medium text-foreground truncate">{entry.profileUrl}</p>
+                      </div>
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0 ml-2" />
+                  </button>
+                ) : (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-dashed border-muted-foreground/30">
+                    <div className="flex items-center gap-3">
+                      <Globe className="h-4 w-4 text-muted-foreground/50" />
+                      <p className="text-sm text-muted-foreground/70">Website not added</p>
+                    </div>
+                    <button
+                      onClick={() => navigate(`/dashboard/edit/${entry.id}`)}
+                      className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </motion.div>
         )}
 
-        {/* AI Profile Analysis */}
-        {profileAnalyzeData && (
+        {/* AI Profile Analysis - Only for contact records */}
+        {recordType !== 'content' && recordType !== 'location' && profileAnalyzeData && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -716,6 +863,80 @@ export default function EntryDetail() {
               <h2 className="text-base font-semibold text-foreground">AI Profile Insights</h2>
               <Badge variant="secondary" className="ml-auto text-xs">AI Enriched</Badge>
             </div>
+
+            {/* Basic Information */}
+            {profileAnalyzeData.basicInfo && (
+              <Card className="border-border/50 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Basic Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {profileAnalyzeData.basicInfo.fullName && (
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Full Name</p>
+                        <p className="text-sm font-semibold text-foreground">{profileAnalyzeData.basicInfo.fullName}</p>
+                      </div>
+                    )}
+                    {profileAnalyzeData.basicInfo.currentDesignation && (
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Current Designation</p>
+                        <p className="text-sm font-semibold text-foreground">{profileAnalyzeData.basicInfo.currentDesignation}</p>
+                      </div>
+                    )}
+                    {profileAnalyzeData.basicInfo.location && (
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Location</p>
+                        <div className="flex items-start gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                          <p className="text-sm font-semibold text-foreground">{profileAnalyzeData.basicInfo.location}</p>
+                        </div>
+                      </div>
+                    )}
+                    {profileAnalyzeData.basicInfo.yearsOfExperience && (
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Years of Experience</p>
+                        <p className="text-sm font-semibold text-foreground">{profileAnalyzeData.basicInfo.yearsOfExperience}</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-3 pt-2 border-t border-border/50">
+                    {profileAnalyzeData.basicInfo.email && (
+                      <div className="flex items-center gap-3 p-2 rounded bg-background/50">
+                        <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-0.5">Email</p>
+                          <p className="text-sm font-medium text-foreground truncate">{profileAnalyzeData.basicInfo.email}</p>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(profileAnalyzeData.basicInfo.email!, 'Email')}
+                          className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                    {profileAnalyzeData.basicInfo.linkedinUrl && (
+                      <button
+                        onClick={() => openUrl(profileAnalyzeData.basicInfo.linkedinUrl!)}
+                        className="flex items-center gap-3 p-2 rounded bg-background/50 hover:bg-background transition-colors text-left group"
+                      >
+                        <Linkedin className="h-4 w-4 text-[#0A66C2] flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-0.5">LinkedIn</p>
+                          <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{profileAnalyzeData.basicInfo.linkedinUrl}</p>
+                        </div>
+                        <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
+                      </button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Professional Summary */}
             {profileAnalyzeData.professionalSummary && (
@@ -1022,8 +1243,8 @@ export default function EntryDetail() {
                       <span className="font-semibold text-foreground">{Math.round(profileAnalyzeData.dataQuality.confidenceScore * 100)}%</span>
                     </div>
                     <div className="w-full bg-border rounded-full h-1.5">
-                      <div 
-                        className="bg-primary h-1.5 rounded-full" 
+                      <div
+                        className="bg-primary h-1.5 rounded-full"
                         style={{ width: `${profileAnalyzeData.dataQuality.confidenceScore * 100}%` }}
                       />
                     </div>
@@ -1045,8 +1266,8 @@ export default function EntryDetail() {
           </motion.div>
         )}
 
-        {/* AI Profile Analysis - Empty State */}
-        {!profileAnalyzeData && (
+        {/* AI Profile Analysis - Empty State - Only for contact records */}
+        {recordType !== 'content' && recordType !== 'location' && !profileAnalyzeData && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1117,7 +1338,7 @@ export default function EntryDetail() {
                               />
                             </div>
                           )}
-                          
+
                           {/* Media Content */}
                           <div className="p-3 space-y-2">
                             {/* Title with Media Type Badge */}
@@ -1131,14 +1352,14 @@ export default function EntryDetail() {
                                 </Badge>
                               )}
                             </div>
-                            
+
                             {/* Description */}
                             {media.sMediaDescription && (
                               <p className="text-xs text-muted-foreground line-clamp-2">
                                 {media.sMediaDescription}
                               </p>
                             )}
-                            
+
                             {/* Tags */}
                             {media.sMediaTags && media.sMediaTags.length > 0 && (
                               <div className="flex flex-wrap gap-1 pt-1">
@@ -1154,14 +1375,14 @@ export default function EntryDetail() {
                                 )}
                               </div>
                             )}
-                            
+
                             {/* Notes */}
                             {media.sNotes && (
                               <p className="text-xs text-muted-foreground line-clamp-2 pt-1 border-t border-border/30 mt-2 pt-2">
                                 {media.sNotes}
                               </p>
                             )}
-                            
+
                             {/* View Full Media Link */}
                             {media.sAdditionalMediaUrl && (
                               <div className="pt-2">
@@ -1276,7 +1497,7 @@ export default function EntryDetail() {
                 <div className="flex items-center justify-center gap-2 w-full">
                   <ImageIcon className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
                   <span>View Media Gallery</span>
-                  <Badge 
+                  <Badge
                     className="ml-auto gradient-primary text-primary-foreground font-bold px-2.5"
                     variant="default"
                   >

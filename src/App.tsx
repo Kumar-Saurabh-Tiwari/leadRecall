@@ -24,8 +24,8 @@ import ScanQR from "./pages/dashboard/add/ScanQR";
 import AddContact from "./pages/dashboard/add/AddContact";
 import ScanOCR from "./pages/dashboard/add/ScanOCR";
 import AddContent from "./pages/dashboard/add/AddContent";
-import AddContentEditor from "./pages/dashboard/add/AddContentEditor";
-import AddEvent from "./pages/dashboard/add/AddEvent";
+import AddContentEditor from "./pages/dashboard/add/AddContentEditor";import AddLocation from './pages/dashboard/add/AddLocation';
+import AddLocationEditor from './pages/dashboard/add/AddLocationEditor';import AddEvent from "./pages/dashboard/add/AddEvent";
 import AddAdditionalMedia from "./pages/dashboard/add/AddAdditionalMedia";
 import AdditionalMediaView from "./pages/dashboard/AdditionalMediaView";
 import NextStep1 from "./pages/dashboard/NextSteps/NextStep1";
@@ -75,6 +75,8 @@ const AppRoutes = () => (
       <Route path="add/scan-ocr" element={<ScanOCR />} />
       <Route path="add/content" element={<AddContent />} />
       <Route path="add/content/editor" element={<AddContentEditor />} />
+      <Route path="add/location" element={<AddLocation />} />
+      <Route path="add/location/editor" element={<AddLocationEditor />} />
       <Route path="add/event" element={<AddEvent />} />
       <Route path="add/media/:id" element={<AddAdditionalMedia />} />
       {/* Next Steps Routes */}
